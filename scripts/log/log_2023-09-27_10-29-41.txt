@@ -1,0 +1,41 @@
+2023-09-27 10:29:41 - DEBUG - Importação da amostra concluída com sucesso.
+2023-09-27 10:29:41 - DEBUG - Tratamento da amostra concluído com sucesso.
+2023-09-27 10:29:41 - DEBUG - Requesting query... 
+2023-09-27 10:29:41 - DEBUG - This service is instrumented using OpenTelemetry. OpenTelemetry could not be imported; please add opentelemetry-api and opentelemetry-instrumentation packages in order to get BigQuery Tracing data.
+2023-09-27 10:29:41 - DEBUG - Converted retries value: 3 -> Retry(total=3, connect=None, read=None, redirect=None, status=None)
+2023-09-27 10:29:41 - DEBUG - Making request: POST https://oauth2.googleapis.com/token
+2023-09-27 10:29:41 - DEBUG - Starting new HTTPS connection (1): oauth2.googleapis.com:443
+2023-09-27 10:29:41 - DEBUG - https://oauth2.googleapis.com:443 "POST /token HTTP/1.1" 200 None
+2023-09-27 10:29:41 - DEBUG - Starting new HTTPS connection (1): bigquery.googleapis.com:443
+2023-09-27 10:29:42 - DEBUG - https://bigquery.googleapis.com:443 "POST /bigquery/v2/projects/rj-smtr-dev/jobs?prettyPrint=false HTTP/1.1" 200 None
+2023-09-27 10:29:42 - DEBUG - Query running...
+2023-09-27 10:29:42 - DEBUG - Job ID: c9db0dda-acd9-4157-b6ba-49e5a3d20b66
+2023-09-27 10:29:42 - DEBUG - Query done.
+Cache hit.
+
+2023-09-27 10:29:42 - DEBUG - https://bigquery.googleapis.com:443 "GET /bigquery/v2/projects/rj-smtr-dev/queries/c9db0dda-acd9-4157-b6ba-49e5a3d20b66?maxResults=0&location=US&prettyPrint=false HTTP/1.1" 200 None
+2023-09-27 10:29:42 - DEBUG - https://bigquery.googleapis.com:443 "GET /bigquery/v2/projects/rj-smtr-dev/datasets/_0e0bde56a81ed441bebc0ef8fb6ba6931f0afed5/tables/anon1b2515c721a52bf31a925eb03099919bb6e807b0bc858d03c486b4bd7f9f3507?prettyPrint=false HTTP/1.1" 200 None
+2023-09-27 10:29:43 - DEBUG - https://bigquery.googleapis.com:443 "GET /bigquery/v2/projects/rj-smtr-dev/datasets/_0e0bde56a81ed441bebc0ef8fb6ba6931f0afed5/tables/anon1b2515c721a52bf31a925eb03099919bb6e807b0bc858d03c486b4bd7f9f3507/data?formatOptions.useInt64Timestamp=True&prettyPrint=false HTTP/1.1" 200 None
+2023-09-27 10:29:43 - DEBUG - Got 389 rows.
+
+2023-09-27 10:29:43 - DEBUG - Acesso aos dados de viagens completas concluído com sucesso.
+2023-09-27 10:29:43 - DEBUG - Classificação das viagens completas concluída com sucesso.
+2023-09-27 10:29:43 - DEBUG - Requesting query... 
+2023-09-27 10:29:43 - DEBUG - Converted retries value: 3 -> Retry(total=3, connect=None, read=None, redirect=None, status=None)
+2023-09-27 10:29:43 - DEBUG - Making request: POST https://oauth2.googleapis.com/token
+2023-09-27 10:29:43 - DEBUG - Starting new HTTPS connection (1): oauth2.googleapis.com:443
+2023-09-27 10:29:43 - DEBUG - https://oauth2.googleapis.com:443 "POST /token HTTP/1.1" 200 None
+2023-09-27 10:29:43 - DEBUG - Starting new HTTPS connection (1): bigquery.googleapis.com:443
+2023-09-27 10:29:44 - DEBUG - https://bigquery.googleapis.com:443 "POST /bigquery/v2/projects/rj-smtr-dev/jobs?prettyPrint=false HTTP/1.1" 200 None
+2023-09-27 10:29:44 - DEBUG - Query running...
+2023-09-27 10:29:44 - DEBUG - Job ID: eb465158-29b1-462c-a984-549c781404ad
+2023-09-27 10:29:44 - DEBUG - Query done.
+Cache hit.
+
+2023-09-27 10:29:44 - DEBUG - https://bigquery.googleapis.com:443 "GET /bigquery/v2/projects/rj-smtr-dev/queries/eb465158-29b1-462c-a984-549c781404ad?maxResults=0&location=US&prettyPrint=false HTTP/1.1" 200 None
+2023-09-27 10:29:44 - DEBUG - https://bigquery.googleapis.com:443 "GET /bigquery/v2/projects/rj-smtr-dev/datasets/_0e0bde56a81ed441bebc0ef8fb6ba6931f0afed5/tables/anon7057624f444e2af2063ff026064937f37237564a37ba92ac01af6bbd672c24cd?prettyPrint=false HTTP/1.1" 200 None
+2023-09-27 10:29:45 - DEBUG - https://bigquery.googleapis.com:443 "GET /bigquery/v2/projects/rj-smtr-dev/datasets/_0e0bde56a81ed441bebc0ef8fb6ba6931f0afed5/tables/anon7057624f444e2af2063ff026064937f37237564a37ba92ac01af6bbd672c24cd/data?formatOptions.useInt64Timestamp=True&prettyPrint=false HTTP/1.1" 200 None
+2023-09-27 10:29:45 - DEBUG - Got 398 rows.
+
+2023-09-27 10:29:45 - DEBUG - Acesso aos dados de viagens conformidade concluído com sucesso.
+2023-09-27 10:29:45 - DEBUG - Classificação das viagens conformidade concluída com sucesso.

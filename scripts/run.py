@@ -135,8 +135,6 @@ print(message)
 
 
 
-
-
 ### --- 5. Fazer a query de viagens conformidade --- ###
 
 # Quais são os dias e id_veiculo ainda não classificados
@@ -163,8 +161,6 @@ viagem_conformidade = treat_trips(viagem_conformidade)
 message = 'Acesso aos dados de viagens conformidade concluído com sucesso.'
 logging.debug(message)
 print(message)
-
-
 
 
 
@@ -214,9 +210,19 @@ if response == 'y':
 
     dados_gps = pd.read_csv('../data/treated/dados_gps.csv')
 
+
+    message = 'Acesso aos dados de GPS concluído com sucesso.'
+    logging.debug(message)
+    print(message)
+    
+    
     # TRATAR OS DADOS COM A FUNÇÃO NOVA
     dados_gps = treat_gps(dados_gps)
     
+    message = 'Tratamento de dados de GPS concluído com sucesso.'
+    logging.debug(message)
+    print(message)
+
     
 
 ### --- 8. Classificar dados de GPS --- ###
@@ -246,6 +252,9 @@ if response == 'y':
         else:
             return ("Sinal de GPS não encontrado para o veículo no horário da viagem", np.nan)
 
+
+
+
     # Apply the function to the rows where status is NaN
     results = viagens_gps_classificadas_nan.apply(lambda row: check_gps(row, dados_gps), axis=1)
     viagens_gps_classificadas_nan['status'] = results.apply(lambda x: x[0])
@@ -271,80 +280,100 @@ if response == 'y':
     servico_query = viagens_gps_to_map['servico_amostra'].drop_duplicates().tolist()
 
     data_query = ','.join([f"'{d}'" for d in data_query])
-    id_veiculo_query = ','.join([f"'{id}'" for id in id_veiculo_query])
     servico_query = ','.join([f"'{id}'" for id in servico_query])
     
-    datas_unicas = len(viagens_gps_to_map['data'].drop_duplicates())
-    estimativa_custo = (datas_unicas * 390) / 1000 
     
-    response = ""
-    while response not in ['y', 'n']:
-        response = input(f"Estimativa de consumo de {estimativa_custo} GB para geração de mapas com GPS. Deseja continuar? (y/n): ").lower()
+    # shape         
+    dados_shape = query_shape(data_query, servico_query) 
+    dados_shape.to_csv('../data/treated/dados_gps_shape.csv', index = False)
+    dados_shape = pd.read_csv('../data/treated/dados_gps_shape.csv')
+    dados_shape['servico'] = dados_shape['servico'].astype(str)    
     
-    if response == 'y':
-        print("Continuando a execução...")        
+    
+    def check_map(row, df_check):
         
-        # ## --- 10. Fazer a query com os mapas --- ##
-        # dados_gps_status = query_gps_status(data_query, id_veiculo_query)
-        # dados_gps_status.to_csv('../data/treated/dados_gps_status.csv', index = False)
+    
+        # Filter the df_check by vehicle ID and time range
+        filtered_df = df_check[
+            (df_check['id_veiculo'] == row['id_veiculo_amostra']) & 
+            (df_check['timestamp_gps'] >= row['datetime_partida_amostra']) & 
+            (df_check['timestamp_gps'] <= row['datetime_chegada_amostra'])
+        ]
 
-        dados_gps_status = pd.read_csv('../data/treated/dados_gps_status.csv')
-           
-        # CONTINUAR DAQUI!!!
-        # tratar dados do gps_status como fiz com as outras queries com uma função específica
-           
-           
-        dados_shape = query_shape(data_query, servico_query) 
-        dados_shape.to_csv('../data/treated/dados_gps_shape.csv', index = False)
-        dados_shape = pd.read_csv('../data/treated/dados_gps_shape.csv')
+        unique_veiculos = filtered_df['id_veiculo'].unique()
+        if not filtered_df.empty and row['status'] == status_check:   
+        
+            for veiculo in unique_veiculos:
+                
+                gps_mapa = filtered_df[filtered_df['id_veiculo'] == veiculo]
+                servico_do_veiculo = gps_mapa['servico'].iloc[0]
+                shape_mapa = dados_shape[dados_shape['servico'] == servico_do_veiculo]
 
-        # tratar dados da viagem_planejada como fiz com as outras queries com uma função específica
-               
-        
-        
-        # Fazer o mapa aqui e salvar em uma pasta com o nome dinamico
-        
+                map = create_trip_map(gps_mapa, shape_mapa)
+                # Pegando o valor da partida para nomear o arquivo
+                partida = viagens_gps_to_map[viagens_gps_to_map['id_veiculo_amostra'] == veiculo]['datetime_partida_amostra'].iloc[0]
 
-
+                hora_formatada = partida.strftime('%Hh%M')
+                
+                filename = f"./../data/output/maps/{veiculo} {partida.date()} {hora_formatada}.html"
+                map.save(filename)
+            
+        
+        
+    viagens_gps_to_map.apply(lambda row: check_map(row, dados_gps), axis=1)
+    
+    message = 'Mapas gerados com sucesso.'
+    logging.debug(message)
+    print(message)
+    
+    # Adiciona a versão do modelo na tabela de status
+        
+    viagens_gps_classificadas['versao_modelo'] = modelo_versao
+        
+    # exportar em Excel
+    viagens_gps_classificadas.to_excel('../data/output/amostra_classificada.xlsx', index=False)
+        
+    message = 'Arquivo com os status exportado com sucesso.'
+    logging.debug(message)
+    print(message)
         
         
         
+    # imprimir no final e salvar um arquivo com um relatório (quantas viagens foram encontradas em cada situação)
+              
         
-        # add coluna com a versão do modelo que rodei a desse é v_0.1
+       
+        # Quantidade de viagens na amostra
+        # Quantidade de viagens com status definido (qtd e %)
+        # Quantidade de viagens com status indefinido (qtd e %)
+        # Quantidade por tipo de status
+        # Quantidade de mapas gerados com os sinais de GPS (mostrar o diretório dos mapas).
         
         
-        # retornar o df completo com os status em xlsx
-        
-        
-        
-        # imprimir no final e salvar um arquivo com um relatório (quantas viagens foram encontradas em cada situação)
-        
+        # Execução do algoritmo finalizada
+                
         # qual foi o percentual de classificação respondida
         
         
-    else:
-        print("Execução finalizada.")
-    
- 
-  
+        
 else:
-    print("Execução finalizada.")
+    print("Execução do algoritmo finalizada.")
+    
+    
+   
    
    
    
    
 # Melhorias
-# colocar aviso caso a query não funcione para checar as credenciais ou a conexão com o bigquery
 # documentar as funções
 # tranformar tudo isto em uma função com o argumento cache para usar os arquivos csv ou fazer a query
 # adicionar argumento booleano chamado cache para fazer a query ou checar se o arquivo existe localmente nas queries anteriores
 # colocar aquele if main aqui no final
 # colocar uma flag que permite usar o cache para debugar o código
+
 # checar se log está em todas as etapas
-# adicionar conteúdo da pasta de log ao git ignore
 # instalar o black
 # https://dev.to/adamlombard/how-to-use-the-black-python-code-formatter-in-vscode-3lo0
 
 # testar com viagens circulares
-
-

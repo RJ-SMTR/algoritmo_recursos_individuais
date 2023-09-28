@@ -19,6 +19,11 @@ def query_viagem_completa(data, id_veiculo):
     """   
     dados = bd.read_sql(q, from_file=True)        
     
+    if dados.empty:
+        print("Não foram encontradas viagens completas.")
+    else:
+        pass
+  
     return dados
 
 # query viagem_conformidade
@@ -39,6 +44,10 @@ def query_viagem_conformidade(data, id_veiculo):
     """   
     dados = bd.read_sql(q, from_file=True)      
     
+    if dados.empty:
+        print("Não foram encontradas viagens em conformidade.")
+    else:
+        pass
     return dados
 
 
@@ -59,30 +68,12 @@ def query_gps(data, id_veiculo):
     dados = bd.read_sql(q, from_file=True)
     dados = dados.sort_values(by = 'timestamp_gps')
     
+    if dados.empty:
+        print("Não foram encontrados dados de GPS.")
+    else:
+        pass
     return dados
-
-# query registros_status_viagem
-
-def query_gps_status(data, id_veiculo):
-    q = f"""
-    SELECT
-      id_veiculo,
-      servico_informado as servico,
-      timestamp_gps,
-      posicao_veiculo_geo,
-      status_viagem      
-    FROM
-      `rj-smtr.projeto_subsidio_sppo.registros_status_viagem`
-    WHERE
-      DATA IN ({data})
-      AND id_veiculo IN ({id_veiculo})
-    """   
-  
-    dados = bd.read_sql(q, from_file=True)        
-    dados = dados.sort_values(by = 'timestamp_gps')
-    
-    return dados
-  
+      
   
 # query shape - viagem planejada
 def query_shape(data, servico):
@@ -90,6 +81,7 @@ def query_shape(data, servico):
     SELECT
     shape_id,
     shape,
+    servico,
     start_pt,
     end_pt
     FROM
@@ -99,5 +91,8 @@ def query_shape(data, servico):
       AND servico IN ({servico})
     """   
     dados = bd.read_sql(q, from_file=True)
-        
+    if dados.empty:
+        print("Não foram encontrados dados do planejado.")
+    else:
+        pass    
     return dados

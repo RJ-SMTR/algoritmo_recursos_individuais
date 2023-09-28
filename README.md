@@ -10,6 +10,7 @@ Para que serve, como funciona
 
 print do esquema no miro (remover o meme do cachorro)
 
+Classificações possíveis das viagens
 
 ## Modo de Usar
 
@@ -17,14 +18,14 @@ print do esquema no miro (remover o meme do cachorro)
 
 abrir o env
 usar o requirements.txt para instalar 
+
 verificar se o arquivo com a amostra está na pasta raw no formato especificado
-verificar se as credenciais de acesso ao BQ estão em ...
+
+inserir o diretório das credenciais do big query bno arquivo set_credentials.py
 
 Executar: python run.py
 
 ver se o repo é publico (confirmar)
-
-inserir o diretório das credenciais do big query bno arquivo set_credentials.py
 
 
 
@@ -62,8 +63,8 @@ Sobre os dados do arquivo:
 │   └── raw                    <- Arquivo com os dados da amostra no formato .xlsx
 ├── scripts                    <- Scripts Python/R
 │   ├── run.py                 <- Script que executa o algoritmo
+│   ├── set_credentials.py     <- Configurações das credenciais do Big Query
 │   ├── log                    <- Log files
-│   ├── utils                  <- Scripts auxiliares, funções de utilidade geral, etc
 |   ├── queries                <- Scripts de queries
 │   └── data_processing        <- Scripts específicos para pré-processamento de dados
 └── requirements.txt           <- Pacotes específicos da análise

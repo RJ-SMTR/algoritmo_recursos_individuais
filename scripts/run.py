@@ -2,6 +2,9 @@
 
 modelo_versao = 'v0.1'
 
+cache = "on" # "off"
+
+
 import basedosdados as bd
 import logging
 import numpy as np
@@ -99,14 +102,18 @@ print(message)
 
 ### --- 3. Fazer a query de viagens completas --- ###
 
-# # descomentar este código ----------------------------------------------------------------
-# viagem_completa = query_viagem_completa(data_query, id_veiculo_query)
-# viagem_completa.to_csv('../data/treated/viagem_completa.csv', index = False)
 
-viagem_completa = pd.read_csv('../data/treated/viagem_completa.csv')
+if cache == "on":
+    viagem_completa = pd.read_csv('../data/treated/viagem_completa.csv')
+else:
+    viagem_completa = query_viagem_completa(data_query, id_veiculo_query)
+    viagem_completa.to_csv('../data/treated/viagem_completa.csv', index = False)
+
 
 # Tratar os dados
 viagem_completa = treat_trips(viagem_completa)
+
+
 
 
 
@@ -148,11 +155,15 @@ data_query = ','.join([f"'{d}'" for d in data_query])
 id_veiculo_query = ','.join([f"'{id}'" for id in id_veiculo_query])
 
 
-# descomentar este código -------------------------------------------------------------------------
-# viagem_conformidade = query_viagem_conformidade(data_query, id_veiculo_query)
-# viagem_conformidade.to_csv('../data/treated/viagem_conformidade.csv', index = False)
 
-viagem_conformidade = pd.read_csv('../data/treated/viagem_conformidade.csv')
+if cache == "on":
+    viagem_conformidade = pd.read_csv('../data/treated/viagem_conformidade.csv')
+else:
+    viagem_conformidade = query_viagem_conformidade(data_query, id_veiculo_query)
+    viagem_conformidade.to_csv('../data/treated/viagem_conformidade.csv', index = False)
+
+
+
 
 # Tratar os dados
 viagem_conformidade = treat_trips(viagem_conformidade)
@@ -196,6 +207,7 @@ id_veiculo_query = ','.join([f"'{id}'" for id in id_veiculo_query])
 datas_unicas = len(linhas_nan['data'].drop_duplicates())
 estimativa_custo = (datas_unicas * 390) / 1000 
 
+
 response = ""
 while response not in ['y', 'n']:
     response = input(f"Estimativa de consumo de {estimativa_custo} GB para consulta de dados de GPS. Deseja continuar? (y/n): ").lower()
@@ -204,11 +216,12 @@ if response == 'y':
 
         
     ### --- Realizar a query de GPS --- ###
-    # DESCOMENTAR ----------------------------------------------------------------------------
-    # dados_gps = query_gps(data_query, id_veiculo_query)
-    # dados_gps.to_csv('../data/treated/dados_gps.csv', index = False)
-
-    dados_gps = pd.read_csv('../data/treated/dados_gps.csv')
+    if cache == "on":
+        dados_gps = pd.read_csv('../data/treated/dados_gps.csv')
+    
+    else:
+        dados_gps = query_gps(data_query, id_veiculo_query)
+        dados_gps.to_csv('../data/treated/dados_gps.csv', index = False)
 
 
     message = 'Acesso aos dados de GPS concluído com sucesso.'
@@ -230,30 +243,6 @@ if response == 'y':
     viagens_gps_classificadas_nan = viagens_conformidade_classificadas[viagens_conformidade_classificadas['status'].isna()]
     viagens_gps_classificadas_not_nan = viagens_conformidade_classificadas[viagens_conformidade_classificadas['status'].notna()]    
 
-    # passar esta função para outro script!!!
-
-    def check_gps(row, df_check):
-        # Filter the df_check by vehicle ID and time range
-        filtered_df = df_check[
-            (df_check['id_veiculo'] == row['id_veiculo_amostra']) & 
-            (df_check['timestamp_gps'] >= row['datetime_partida_amostra']) & 
-            (df_check['timestamp_gps'] <= row['datetime_chegada_amostra'])
-        ]
-        
-        # Get unique services from filtered_df
-        unique_servicos = filtered_df['servico'].unique()
-        servico_apurado = ', '.join(unique_servicos)
-
-        if not filtered_df.empty and np.isnan(row['status']):
-            if filtered_df.iloc[0]['servico'] == row['servico_amostra']:
-                return ("Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra", servico_apurado)
-            else:
-                return ("Sinal de GPS encontrado para o veículo operando em serviço diferente da amostra", servico_apurado)
-        else:
-            return ("Sinal de GPS não encontrado para o veículo no horário da viagem", np.nan)
-
-
-
 
     # Apply the function to the rows where status is NaN
     results = viagens_gps_classificadas_nan.apply(lambda row: check_gps(row, dados_gps), axis=1)
@@ -269,12 +258,13 @@ if response == 'y':
 
 ### --- 9. Fazer os mapas em HTML para casos com GPS  --- ###
 
-    
-    # checar status
     status_check = 'Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra'
     viagens_gps_to_map = viagens_gps_classificadas[viagens_gps_classificadas['status'] == status_check]
-    viagens_gps_not_map = viagens_gps_classificadas[viagens_gps_classificadas['status'] != status_check]
-
+           
+    
+    status_check = 'Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra'
+    viagens_gps_to_map = viagens_gps_classificadas[viagens_gps_classificadas['status'] == status_check]
+    
     id_veiculo_query = viagens_gps_to_map['id_veiculo_amostra'].drop_duplicates().tolist()
     data_query = viagens_gps_to_map['data'].drop_duplicates().tolist()
     servico_query = viagens_gps_to_map['servico_amostra'].drop_duplicates().tolist()
@@ -283,16 +273,19 @@ if response == 'y':
     servico_query = ','.join([f"'{id}'" for id in servico_query])
     
     
-    # shape         
-    dados_shape = query_shape(data_query, servico_query) 
-    dados_shape.to_csv('../data/treated/dados_gps_shape.csv', index = False)
-    dados_shape = pd.read_csv('../data/treated/dados_gps_shape.csv')
-    dados_shape['servico'] = dados_shape['servico'].astype(str)    
+    # shape    
+    if cache == "on":
+        dados_shape = pd.read_csv('../data/treated/dados_gps_shape.csv')
     
+    else:
+        dados_shape = query_shape(data_query, servico_query) 
+        dados_shape.to_csv('../data/treated/dados_gps_shape.csv', index = False)   
     
+    dados_shape['servico'] = dados_shape['servico'].astype(str) 
+           
+    # passar função para script de funções:
     def check_map(row, df_check):
         
-    
         # Filter the df_check by vehicle ID and time range
         filtered_df = df_check[
             (df_check['id_veiculo'] == row['id_veiculo_amostra']) & 
@@ -317,14 +310,15 @@ if response == 'y':
                 
                 filename = f"./../data/output/maps/{veiculo} {partida.date()} {hora_formatada}.html"
                 map.save(filename)
-            
         
-        
+              
+           
     viagens_gps_to_map.apply(lambda row: check_map(row, dados_gps), axis=1)
     
-    message = 'Mapas gerados com sucesso.'
+    message = 'Mapas gerados com sucesso e disponíveis em data/output/maps.'
     logging.debug(message)
     print(message)
+    
     
     # Adiciona a versão do modelo na tabela de status
         
@@ -338,42 +332,31 @@ if response == 'y':
     print(message)
         
         
-        
     # imprimir no final e salvar um arquivo com um relatório (quantas viagens foram encontradas em cada situação)
-              
-        
-       
-        # Quantidade de viagens na amostra
-        # Quantidade de viagens com status definido (qtd e %)
-        # Quantidade de viagens com status indefinido (qtd e %)
-        # Quantidade por tipo de status
-        # Quantidade de mapas gerados com os sinais de GPS (mostrar o diretório dos mapas).
-        
-        
-        # Execução do algoritmo finalizada
-                
-        # qual foi o percentual de classificação respondida
-        
-        
+    
+    # Criando um dataframe para armazenar os resultados
+    tabela = pd.DataFrame(index=['Parecer definido','Parecer indefinido'], columns=['Contagem', 'Porcentagem'])
+    # Contando as ocorrências de cada caso
+    total_rows = len(viagens_gps_classificadas)
+    tabela.loc['Parecer indefinido', 'Contagem'] = sum(viagens_gps_classificadas['status'] == status_check)
+    tabela.loc['Parecer definido', 'Contagem'] = total_rows - tabela.loc['Parecer indefinido', 'Contagem']
+
+    # Calculando as porcentagens
+    tabela['Porcentagem'] = (tabela['Contagem'] / total_rows) * 100    
+    logging.debug(tabela)
+    print(tabela)        
         
 else:
     print("Execução do algoritmo finalizada.")
     
     
+    
    
-   
-   
-   
-   
-# Melhorias
-# documentar as funções
-# tranformar tudo isto em uma função com o argumento cache para usar os arquivos csv ou fazer a query
-# adicionar argumento booleano chamado cache para fazer a query ou checar se o arquivo existe localmente nas queries anteriores
-# colocar aquele if main aqui no final
-# colocar uma flag que permite usar o cache para debugar o código
-
-# checar se log está em todas as etapas
+# Melhorias:
+# remover funções do script run
+# remover pergunta de consumo quando o cache estiver ativo
 # instalar o black
 # https://dev.to/adamlombard/how-to-use-the-black-python-code-formatter-in-vscode-3lo0
-
+# colocar aquele if main aqui no final
+# colocar uma flag que permite usar o cache para debugar o código
 # testar com viagens circulares

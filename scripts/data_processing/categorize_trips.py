@@ -177,3 +177,33 @@ def check_trips(amostra: pd.DataFrame, query_trip_table: pd.DataFrame, status: s
     return final_data 
 # ex: check_trips(amostra, viagem_completa, "Viagem identificada e já paga")
 
+
+
+
+# Classificar dados de GPS
+
+def check_gps(row, df_check):
+    # Filter the df_check by vehicle ID and time range
+    filtered_df = df_check[
+        (df_check['id_veiculo'] == row['id_veiculo_amostra']) & 
+        (df_check['timestamp_gps'] >= row['datetime_partida_amostra']) & 
+        (df_check['timestamp_gps'] <= row['datetime_chegada_amostra'])
+    ]
+    
+    # Get unique services from filtered_df
+    unique_servicos = filtered_df['servico'].unique()
+    servico_apurado = ', '.join(unique_servicos)
+
+    if not filtered_df.empty and np.isnan(row['status']):
+        if filtered_df.iloc[0]['servico'] == row['servico_amostra']:
+            return ("Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra", servico_apurado)
+        else:
+            return ("Sinal de GPS encontrado para o veículo operando em serviço diferente da amostra", servico_apurado)
+    else:
+        return ("Sinal de GPS não encontrado para o veículo no horário da viagem", np.nan)
+
+
+
+# Iterar para gerar arquivos com mapas
+
+

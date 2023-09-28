@@ -2,6 +2,8 @@
 
 ---
 
+Desenvolvido por: Igor Laltuf
+
 ## Descrição
 
 Para que serve, como funciona
@@ -26,18 +28,19 @@ inserir o diretório das credenciais do big query bno arquivo set_credentials.py
 
 
 
+
+
 2. Arquivo de input
-
-
 
 A pasta `data/raw` deve conter um arquivo no formato xlsx contendo os dados das viagens individuais que serão avaliadas pelo algoritmo. O arquivo deve conter apenas uma aba e as seguintes colunas:
 
-Adicionei a coluna sentido (colocar print novo) - o conteúdo dela é opcional, mas a coluna precisa existir. Colocar um print novo abaixo com a coluna correta.
 <img src="./data/figures/tabela_input.png" alt="Descrição da imagem" width="800"/>
 
-Obs: a coluna id_veiculo deve conter o dígito antes do número do veículo.
+Sobre os dados do arquivo:
+- a coluna id_veiculo deve conter o dígito antes do número do veículo;
+- a coluna sentido deve existir, mesmo que esteja vazia; e
+- os dados do arquivo `arquivo_de_exemplo.xlsx` no diretório `data/raw` devem ser usados apenas para fins de testes do algoritmo. Os dados das viagens que constam no arquivo foram alterados manualmente e não devem ser considerados para análises sobre as respectivas viagens.
 
-Obs2: os dados do arquivo `arquivo_de_exemplo.xlsx` no diretório `data/raw` devem ser usados apenas para fins de testes do algoritmo. Os dados das viagens que constam no arquivo foram alterados manualmente e não devem ser considerados para análises sobre estas viagens.
 
 
 3. Como executar o algoritmo

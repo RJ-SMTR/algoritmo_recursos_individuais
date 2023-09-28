@@ -1,4 +1,4 @@
-# Algoritmo de Classificação de Recursos de Viagens Individuais - Linhas Não Circulares
+# Algoritmo de Classificação de Recursos para Viagens Individuais
 
 ---
 
@@ -6,29 +6,45 @@ Desenvolvido por: Igor Laltuf
 
 ## Descrição
 
-Para que serve, como funciona
+O algoritmo presente neste repositório tem como objetivo classificar as viagens individuais presentes nos recursos de pagamento do subsídio. O funcionamento do algoritmo ocorre conforme mostra a figura abaixo:
 
-print do esquema no miro (remover o meme do cachorro)
+<img src="./data/figures/algoritmo_funcionamento.png" alt="Descrição da imagem" width="800"/>
 
-Classificações possíveis das viagens
+O algoritmo recebe um arquivo contendo informações sobre as viagens e retorna um status, que pode ser:
+
+- Viagem duplicada na amostra
+- Viagem identificada e já paga
+- Viagem identificada e já paga para serviço diferente da amostra
+- Viagem inválida - Não atingiu % de GPS ou trajeto correto
+- Viagem inválida - Não atingiu % de GPS ou trajeto correto para serviço diferente da amostra
+- Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra
+- Sinal de GPS encontrado para o veículo operando em serviço diferente da amostra
+
+Por fim, para os casos em que os dados do sinal de GPS são encontrados para o serviço da amostra no momento da viagem, são gerados mapas que comparam os sinais de GPS com o trajeto. Estes mapas ficam disponibilizados no diretório `data/output/maps`:
+
+
+<img src="./data/figures/mapa_exemplo.png" alt="Descrição da imagem" width="800"/>
+
+
+
 
 ## Modo de Usar
 
 1. Preparar o ambiente
 
-abrir o env
-usar o requirements.txt para instalar 
+
+```bash
+python -m venv env
+. dbt-env/bin/activate # no Windows, usar . dbt-env/Scripts/activate
+pip install -r requirements.txt
+```
+
+* Configure suas credenciais para leitura/escrita no datalake:
+Preencha suas credencias no arquivo `scripts/set_credentials.py`
+
+
 
 verificar se o arquivo com a amostra está na pasta raw no formato especificado
-
-inserir o diretório das credenciais do big query bno arquivo set_credentials.py
-
-Executar: python run.py
-
-ver se o repo é publico (confirmar)
-
-
-
 
 
 2. Arquivo de input
@@ -46,12 +62,37 @@ Sobre os dados do arquivo:
 
 3. Como executar o algoritmo
 
+* Execute o arquivo `run.py` para iniciar o algoritmo:
+
+```bash
+python scripts/run.py
+```
+
+
+Opção de cache on ou off
+
 
 
 
 4. Como interpretação dos resultados
 
 
+- Viagem duplicada na amostra: a amostra contém duas ou mais viagens em que o mesmo veículo opera ao mesmo tempo.
+
+- Viagem identificada e já paga
+- Viagem identificada e já paga para serviço diferente da amostra
+- Viagem inválida - Não atingiu % de GPS ou trajeto correto
+- Viagem inválida - Não atingiu % de GPS ou trajeto correto para serviço diferente da amostra
+- Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra
+- Sinal de GPS encontrado para o veículo operando em serviço diferente da amostra
+
+
+
+
+
+
+
+O repositório é público?
 
 
 ```
@@ -61,7 +102,7 @@ Sobre os dados do arquivo:
 │   ├── treated                <- Dados tratados
 │   ├── figures                <- Imagens geradas da análise
 │   └── raw                    <- Arquivo com os dados da amostra no formato .xlsx
-├── scripts                    <- Scripts Python/R
+├── scripts                    <- Scripts Python
 │   ├── run.py                 <- Script que executa o algoritmo
 │   ├── set_credentials.py     <- Configurações das credenciais do Big Query
 │   ├── log                    <- Log files

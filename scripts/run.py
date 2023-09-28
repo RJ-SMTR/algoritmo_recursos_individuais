@@ -2,7 +2,7 @@
 
 modelo_versao = 'v0.1'
 
-cache = "on" # "off"
+cache = "off" # "off"
 
 
 import basedosdados as bd
@@ -257,10 +257,6 @@ if response == 'y':
 
 
 ### --- 9. Fazer os mapas em HTML para casos com GPS  --- ###
-
-    status_check = 'Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra'
-    viagens_gps_to_map = viagens_gps_classificadas[viagens_gps_classificadas['status'] == status_check]
-           
     
     status_check = 'Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra'
     viagens_gps_to_map = viagens_gps_classificadas[viagens_gps_classificadas['status'] == status_check]
@@ -359,4 +355,4 @@ else:
 # https://dev.to/adamlombard/how-to-use-the-black-python-code-formatter-in-vscode-3lo0
 # colocar aquele if main aqui no final
 # colocar uma flag que permite usar o cache para debugar o código
-# testar com viagens circulares
+# testar com viagens circulares dos outro recursos

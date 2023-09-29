@@ -96,3 +96,24 @@ def query_shape(data, servico):
     else:
         pass    
     return dados
+
+
+# query shape - viagem planejada
+def query_tipo_linha(data, servico):
+    q = f"""
+    SELECT
+    data,
+    servico,
+    sentido
+    FROM
+      `rj-smtr.projeto_subsidio_sppo.viagem_planejada`
+    WHERE
+      DATA IN ({data})
+      AND servico IN ({servico})
+    """   
+    dados = bd.read_sql(q, from_file=True)
+    if dados.empty:
+        print("Não foram encontrados dados do planejados para o dia.")
+    else:
+        pass    
+    return dados

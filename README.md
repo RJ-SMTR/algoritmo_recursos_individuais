@@ -7,7 +7,7 @@ Desenvolvido por: Igor Laltuf
 ## Descrição
 
 O algoritmo presente neste repositório tem como objetivo classificar as viagens individuais presentes nos recursos de pagamento do subsídio. O funcionamento do algoritmo ocorre conforme mostra a figura abaixo:
-
+**Atualizar a imagem abaixo para a nova versão**
 <img src="./data/figures/algoritmo_funcionamento.png" alt="Descrição da imagem" width="800"/>
 
 O algoritmo recebe um arquivo contendo informações sobre as viagens e retorna um status, que pode ser:
@@ -19,6 +19,9 @@ O algoritmo recebe um arquivo contendo informações sobre as viagens e retorna 
 - Viagem inválida - Não atingiu % de GPS ou trajeto correto para serviço diferente da amostra
 - Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra
 - Sinal de GPS encontrado para o veículo operando em serviço diferente da amostra
+
+**trocar amostra por recurso** nas categorias
+
 
 Por fim, para os casos em que os dados do sinal de GPS são encontrados para o serviço da amostra no momento da viagem, são gerados mapas que comparam os sinais de GPS com o trajeto. Estes mapas ficam disponibilizados no diretório `data/output/maps`:
 
@@ -85,8 +88,6 @@ Opção de cache on ou off
 - Viagem inválida - Não atingiu % de GPS ou trajeto correto para serviço diferente da amostra
 - Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra
 - Sinal de GPS encontrado para o veículo operando em serviço diferente da amostra
-
-
 
 
 

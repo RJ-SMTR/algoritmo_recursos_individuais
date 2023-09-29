@@ -1,9 +1,7 @@
 ## --- Setup libraries and paths --- ###
-
 modelo_versao = 'v0.1'
 
 cache = "off" # "off"
-
 
 import basedosdados as bd
 import logging
@@ -25,7 +23,6 @@ paths["figures"] = current_path / 'data' / 'figures'
 paths["scripts"] = current_path / 'scripts'
 paths["queries"] = current_path / 'scripts' / 'queries'
 paths["data_processing"] = current_path / 'scripts' / 'data_processing'
-
 
 for path in paths.values():
     if not os.path.exists(path):
@@ -60,7 +57,6 @@ logging.debug(message)
 print(message)
 
 
-
 ### --- 1. Tratar a amostra --- ###
 
 dir_path = '../data/raw'
@@ -78,14 +74,12 @@ else:
 # Tratar dados da amostra
 amostra = treat_sample(amostra)
 
-
 message = 'Importação da amostra concluída com sucesso.'
 logging.debug(message)
 print(message)
 
 ### --- 2. Remover dados da amostra inválidos / duplicados --- ###
 amostra_tratada = remove_overlapping_trips(amostra)
-
 
 # Quais são os dias e id_veiculo
 id_veiculo_query = amostra_tratada['id_veiculo'].drop_duplicates().tolist()
@@ -99,9 +93,35 @@ print(message)
 
 
 
+### --- 3. Identificar se a linha é circular --- ### # comentar isto daqui pra voltar a funcionar 
+
+
+servico_query = amostra_tratada['servico'].drop_duplicates().tolist()
+servico_query = ','.join([f"'{id}'" for id in servico_query])
+
+tipo_servico = query_tipo_linha(data_query, servico_query)
+tipo_servico['servico_circular'] = np.where(tipo_servico['sentido'] == 'C', 1, 0)
+tipo_servico = tipo_servico.drop(columns=['sentido'])
+
+
+tipo_servico['data'] = tipo_servico['data'].astype(str)
+tipo_servico['servico'] = tipo_servico['servico'].astype(str)
+tipo_servico = tipo_servico.drop_duplicates()
+
+amostra_tratada = amostra_tratada.merge(tipo_servico, on=['data', 'servico'])
+
+
+# esta coluna indica se o servico é circular servico_circular = 1
+
+# O tratamento deve ser diferente para elas!!
+
+
+
+
+
+
 
 ### --- 3. Fazer a query de viagens completas --- ###
-
 
 if cache == "on":
     viagem_completa = pd.read_csv('../data/treated/viagem_completa.csv')
@@ -109,21 +129,13 @@ else:
     viagem_completa = query_viagem_completa(data_query, id_veiculo_query)
     viagem_completa.to_csv('../data/treated/viagem_completa.csv', index = False)
 
-
 # Tratar os dados
 viagem_completa = treat_trips(viagem_completa)
 
 
-
-
-
-# incluir um arquivo de log aqui!
-
 message = 'Acesso aos dados de viagens completas concluído com sucesso.'
 logging.debug(message)
 print(message)
-
-
 
 
 
@@ -132,13 +144,11 @@ print(message)
 viagens_completas_classificadas = check_trips(amostra_tratada, viagem_completa,
                                     "Viagem identificada e já paga")
 
-
 viagens_completas_classificadas.to_excel('../data/treated/viagem_completa_classificada.xlsx', index = False)
 
 message = 'Classificação das viagens completas concluída com sucesso.'
 logging.debug(message)
 print(message)
-
 
 
 
@@ -155,7 +165,6 @@ data_query = ','.join([f"'{d}'" for d in data_query])
 id_veiculo_query = ','.join([f"'{id}'" for id in id_veiculo_query])
 
 
-
 if cache == "on":
     viagem_conformidade = pd.read_csv('../data/treated/viagem_conformidade.csv')
 else:
@@ -163,11 +172,8 @@ else:
     viagem_conformidade.to_csv('../data/treated/viagem_conformidade.csv', index = False)
 
 
-
-
 # Tratar os dados
 viagem_conformidade = treat_trips(viagem_conformidade)
-
 
 message = 'Acesso aos dados de viagens conformidade concluído com sucesso.'
 logging.debug(message)
@@ -180,9 +186,7 @@ print(message)
 viagens_conformidade_classificadas = check_trips(viagens_completas_classificadas, viagem_conformidade,
                                     "Viagem inválida - Não atingiu % de GPS ou trajeto correto")
 
-
 viagens_conformidade_classificadas.to_excel('../data/treated/viagem_conformidade_classificada.xlsx', index = False)
-
 
 message = 'Classificação das viagens conformidade concluída com sucesso.'
 logging.debug(message)
@@ -202,18 +206,15 @@ data_query = linhas_nan['data'].drop_duplicates().tolist()
 data_query = ','.join([f"'{d}'" for d in data_query])
 id_veiculo_query = ','.join([f"'{id}'" for id in id_veiculo_query])
 
-
 # Input com resposta y ou n
 datas_unicas = len(linhas_nan['data'].drop_duplicates())
 estimativa_custo = (datas_unicas * 390) / 1000 
-
 
 response = ""
 while response not in ['y', 'n']:
     response = input(f"Estimativa de consumo de {estimativa_custo} GB para consulta de dados de GPS. Deseja continuar? (y/n): ").lower()
 if response == 'y':
     print("Continuando a execução...")
-
         
     ### --- Realizar a query de GPS --- ###
     if cache == "on":
@@ -236,13 +237,10 @@ if response == 'y':
     logging.debug(message)
     print(message)
 
-    
-
 ### --- 8. Classificar dados de GPS --- ###
     
     viagens_gps_classificadas_nan = viagens_conformidade_classificadas[viagens_conformidade_classificadas['status'].isna()]
     viagens_gps_classificadas_not_nan = viagens_conformidade_classificadas[viagens_conformidade_classificadas['status'].notna()]    
-
 
     # Apply the function to the rows where status is NaN
     results = viagens_gps_classificadas_nan.apply(lambda row: check_gps(row, dados_gps), axis=1)
@@ -267,7 +265,6 @@ if response == 'y':
 
     data_query = ','.join([f"'{d}'" for d in data_query])
     servico_query = ','.join([f"'{id}'" for id in servico_query])
-    
     
     # shape    
     if cache == "on":
@@ -306,8 +303,7 @@ if response == 'y':
                 
                 filename = f"./../data/output/maps/{veiculo} {partida.date()} {hora_formatada}.html"
                 map.save(filename)
-        
-              
+                    
            
     viagens_gps_to_map.apply(lambda row: check_map(row, dados_gps), axis=1)
     
@@ -322,14 +318,22 @@ if response == 'y':
         
     # exportar em Excel
     viagens_gps_classificadas.to_excel('../data/output/amostra_classificada.xlsx', index=False)
-        
-    message = 'Arquivo com os status exportado com sucesso.'
+
+    message = 'Arquivo com os status exportado com sucesso em xlsx.'
     logging.debug(message)
     print(message)
-        
+     
+    viagens_gps_classificadas.to_json('../data/output/amostra_classificada.json')
+    
+    message = 'Arquivo com os status exportado com sucesso em json.'
+    logging.debug(message)
+    print(message)   
         
     # imprimir no final e salvar um arquivo com um relatório (quantas viagens foram encontradas em cada situação)
     
+    message = 'Relatório da execução do algoritmo:'
+    logging.debug(message)
+    print(message)
     # Criando um dataframe para armazenar os resultados
     tabela = pd.DataFrame(index=['Parecer definido','Parecer indefinido'], columns=['Contagem', 'Porcentagem'])
     # Contando as ocorrências de cada caso
@@ -345,14 +349,3 @@ if response == 'y':
 else:
     print("Execução do algoritmo finalizada.")
     
-    
-    
-   
-# Melhorias:
-# remover funções do script run
-# remover pergunta de consumo quando o cache estiver ativo
-# instalar o black
-# https://dev.to/adamlombard/how-to-use-the-black-python-code-formatter-in-vscode-3lo0
-# colocar aquele if main aqui no final
-# colocar uma flag que permite usar o cache para debugar o código
-# testar com viagens circulares dos outro recursos

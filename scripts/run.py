@@ -1,8 +1,8 @@
-## --- Setup libraries and paths --- ###
+### --- 1. Configurar bibliotecas, diretórios, flags e arquivo de log --- ###
 modelo_versao = 'v0.1'
 
-cache = "off" # "off"
-
+### --- 1.1 Bibliotecas ---###
+import argparse
 import basedosdados as bd
 import logging
 import numpy as np
@@ -13,6 +13,7 @@ import os
 import sys
 from pathlib import Path 
 
+### --- 1.2 Diretórios ---###
 current_path = Path().resolve().parent
 
 paths = dict()
@@ -25,7 +26,6 @@ paths["scripts"] = current_path / 'scripts'
 paths["queries"] = current_path / 'scripts' / 'queries'
 paths["data_processing"] = current_path / 'scripts' / 'data_processing'
 paths["dataviz"] = current_path / 'scripts' / 'dataviz'
-
 
 for path in paths.values():
     if not os.path.exists(path):
@@ -43,8 +43,9 @@ from categorize_trips import *
 from queries_functions import *
 from treat_data import *
 from graphs import *
+from automate_map import *
 
-## --- Configuração dos arquivos de log --- ##
+### --- 1.3 Arquivo de log ---###
 current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 log_filename = f"./log/log_{current_time}.txt"
 logging.basicConfig(
@@ -55,58 +56,90 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'  # This format excludes milliseconds
 )
 
+### --- 1.4 Flags ---###
+parser = argparse.ArgumentParser(description="Execute o script run.py com opções.")
+
+# permite usar o cache para não baixar novamente os dados da última consulta no big query
+parser.add_argument('--cache_on', action='store_true', help="Ative o cache")
+
+# permite realizar o reprocessamento alterando o serviço do veículo para viagens antes de 16/11/2022
+parser.add_argument('--rpc', action='store_true', help="Ative o RPC")
+
+args = parser.parse_args()
+
+cache = "on" if args.cache_on else "off"
+rpc = "on" if args.rpc else "off"
+
+message = 'Dependências carregadas com sucesso. ' 
+logging.debug(message)
+print(message)
+
+### --- 2. Amostra --- ###
 
 message = 'Iniciando execução do Modelo de Classificação de Recursos Individuais versão: ' + modelo_versao 
 logging.debug(message)
 print(message)
 
 
-### --- 1. Tratar a amostra --- ###
-
+### --- 2.1 Importar amostra --- ###
 dir_path = '../data/raw'
 files = [f for f in os.listdir(dir_path) if f.endswith('.xlsx')]
 
 if len(files) == 1:
     file_path = os.path.join(dir_path, files[0])
     amostra = pd.read_excel(file_path)
+    message = 'Importação da amostra realizada com sucesso.'
+    logging.debug(message)
+    print(message)
+
 else:
     message = 'Nenhum arquivo encontrado na pasta raw ou existe mais de um arquivo no formato xlsx.'
     logging.debug(message)
     print(message)
- 
 
-# Tratar dados da amostra
+
+### --- 2.2 Tratar amostra --- ###
+# Tratar amostra
 amostra = treat_sample(amostra)
-
-message = 'Importação da amostra concluída com sucesso.'
-logging.debug(message)
-print(message)
-
-### --- 2. Remover dados da amostra inválidos / duplicados --- ###
-amostra_tratada = remove_overlapping_trips(amostra)
-
-# Quais são os dias e id_veiculo
-id_veiculo_query = amostra_tratada['id_veiculo'].drop_duplicates().tolist()
-data_query = amostra_tratada['data'].drop_duplicates().tolist()
-data_query = ','.join([f"'{d}'" for d in data_query])
-id_veiculo_query = ','.join([f"'{id}'" for id in id_veiculo_query])
 
 message = 'Tratamento da amostra concluído com sucesso.'
 logging.debug(message)
 print(message)
 
 
+### --- 2.3 Classificar dados inválidos / duplicados da amostra --- ###
+amostra_tratada = remove_overlapping_trips(amostra)
 
-### --- 3. Identificar se a linha é circular --- ### # comentar isto daqui pra voltar a funcionar 
+message = 'Verificação de dados inconsistentes na amostra finalizada com sucesso.'
+logging.debug(message)
+print(message)
 
+
+### --- 3. Identificar se a linha é circular --- ###  
+
+# Quais são os dias e o id_veiculo presentes na amostra
+id_veiculo_query = amostra_tratada['id_veiculo'].drop_duplicates().tolist()
+data_query = amostra_tratada['data'].drop_duplicates().tolist()
+data_query = ','.join([f"'{d}'" for d in data_query])
+id_veiculo_query = ','.join([f"'{id}'" for id in id_veiculo_query])
+
+
+message = 'Verificando se existem linhas circulares.'
+logging.debug(message)
+print(message)
 
 servico_query = amostra_tratada['servico'].drop_duplicates().tolist()
 servico_query = ','.join([f"'{id}'" for id in servico_query])
 
-tipo_servico = query_tipo_linha(data_query, servico_query)
+if args.cache_on:
+    tipo_servico = pd.read_csv('../data/treated/tipo_servico.csv')   
+    
+else:
+    tipo_servico = query_tipo_linha(data_query, servico_query)
+    tipo_servico.to_csv('../data/treated/tipo_servico.csv', index = False)
+
 tipo_servico['servico_circular'] = np.where(tipo_servico['sentido'] == 'C', 1, 0)
 tipo_servico = tipo_servico.drop(columns=['sentido'])
-
 
 tipo_servico['data'] = tipo_servico['data'].astype(str)
 tipo_servico['servico'] = tipo_servico['servico'].astype(str)
@@ -114,9 +147,14 @@ tipo_servico = tipo_servico.drop_duplicates()
 
 amostra_tratada = amostra_tratada.merge(tipo_servico, on=['data', 'servico'])
 
+message = 'Identificação de linhas finalizada com sucesso.'
+logging.debug(message)
+print(message)
 
-# esta coluna indica se o servico é circular servico_circular = 1
 
+
+#### FAZER ESTA PARTE
+# esta coluna nova indica se o servico é circular servico_circular = 1
 # O tratamento deve ser diferente para elas!!
 
 
@@ -124,26 +162,32 @@ amostra_tratada = amostra_tratada.merge(tipo_servico, on=['data', 'servico'])
 
 
 
+### --- 4. VIAGENS COMPLETAS --- ###
 
-### --- 3. Fazer a query de viagens completas --- ###
+### --- 4.1 Acessar dados das viagens completas --- ###
 
-if cache == "on":
-    viagem_completa = pd.read_csv('../data/treated/viagem_completa.csv')
+if args.cache_on:
+    viagem_completa = pd.read_csv('../data/treated/viagem_completa.csv')   
+    
 else:
     viagem_completa = query_viagem_completa(data_query, id_veiculo_query)
     viagem_completa.to_csv('../data/treated/viagem_completa.csv', index = False)
-
-# Tratar os dados
-viagem_completa = treat_trips(viagem_completa)
-
 
 message = 'Acesso aos dados de viagens completas concluído com sucesso.'
 logging.debug(message)
 print(message)
 
+### --- 4.2 Tratar dados das viagens completas --- ###
+
+viagem_completa = treat_trips(viagem_completa)
+
+message = 'Tratamento dos dados de viagens completas concluído com sucesso.'
+logging.debug(message)
+print(message)
 
 
-### --- 4. Classificar Viagens Completas --- ###
+
+### --- 4.3 Comparar amostra com as viagens completas --- ###
 
 viagens_completas_classificadas = check_trips(amostra_tratada, viagem_completa,
                                     "Viagem identificada e já paga")
@@ -156,7 +200,9 @@ print(message)
 
 
 
-### --- 5. Fazer a query de viagens conformidade --- ###
+### --- 5. VIAGENS CONFORMIDADE --- ###
+
+### --- 5.1 Acessar dados das viagens conformidade --- ###
 
 # Quais são os dias e id_veiculo ainda não classificados
 
@@ -168,15 +214,15 @@ data_query = linhas_nan['data'].drop_duplicates().tolist()
 data_query = ','.join([f"'{d}'" for d in data_query])
 id_veiculo_query = ','.join([f"'{id}'" for id in id_veiculo_query])
 
-
-if cache == "on":
-    viagem_conformidade = pd.read_csv('../data/treated/viagem_conformidade.csv')
+# Acessar os dados
+if args.cache_on:
+    viagem_conformidade = pd.read_csv('../data/treated/viagem_conformidade.csv')  
+    
 else:
     viagem_conformidade = query_viagem_conformidade(data_query, id_veiculo_query)
     viagem_conformidade.to_csv('../data/treated/viagem_conformidade.csv', index = False)
 
-
-# Tratar os dados
+### --- 5.2 Tratar dados das viagens conformidade --- ###
 viagem_conformidade = treat_trips(viagem_conformidade)
 
 message = 'Acesso aos dados de viagens conformidade concluído com sucesso.'
@@ -184,8 +230,7 @@ logging.debug(message)
 print(message)
 
 
-
-### --- 6. Classificar Viagens conformidade --- ###
+### --- 5.3 Comparar amostra com as viagens conformidade --- ###
 
 viagens_conformidade_classificadas = check_trips(viagens_completas_classificadas, viagem_conformidade,
                                     "Viagem inválida - Não atingiu % de GPS ou trajeto correto")
@@ -198,10 +243,13 @@ print(message)
 
 
 
-### --- 7. Confirmar se query dos dados de GPS deve ser feita --- ###
 
-# Quais são as datas e veículos não encontrados nas etapas anteriores
 
+### --- 6. SINAIS DE GPS --- ###
+
+### --- 6.1 Confirmar se a query dos dados de GPS deve ser feita --- ###
+
+# Quais são as datas e veículos não encontrados nas etapas anteriores:
 linhas_nan = viagens_conformidade_classificadas[pd.isna(viagens_conformidade_classificadas['status'])]
 
 id_veiculo_query = linhas_nan['id_veiculo_amostra'].drop_duplicates().tolist()
@@ -210,146 +258,145 @@ data_query = linhas_nan['data'].drop_duplicates().tolist()
 data_query = ','.join([f"'{d}'" for d in data_query])
 id_veiculo_query = ','.join([f"'{id}'" for id in id_veiculo_query])
 
-# Input com resposta y ou n
+# Estimar custos da query e perguntar se deseja continuar
 datas_unicas = len(linhas_nan['data'].drop_duplicates())
 estimativa_custo = (datas_unicas * 390) / 1000 
 
-response = ""
-while response not in ['y', 'n']:
-    response = input(f"Estimativa de consumo de {estimativa_custo} GB para consulta de dados de GPS. Deseja continuar? (y/n): ").lower()
-if response == 'y':
-    print("Continuando a execução...")
+proceed = False
+
+if not args.cache_on:
+    response = ""
+    while response not in ['y', 'n']:
+        response = input(f"Estimativa de consumo de {estimativa_custo} GB para consulta de dados de GPS. Deseja continuar? (y/n): ").lower()
+    if response == 'y':
+        print("Continuando a execução...")
+        proceed = True
+else:
+    proceed = True
+
+if proceed: # Executar caso o comando cotenha a flag "cache_on" ou a resposta seja y
+    
         
-    ### --- Realizar a query de GPS --- ###
-    if cache == "on":
-        dados_gps = pd.read_csv('../data/treated/dados_gps.csv')
+    ### --- 6.2 Acessar os sinais de GPS --- ###
+    if args.cache_on:
+        dados_gps = pd.read_csv('../data/treated/dados_gps.csv') 
     
     else:
         dados_gps = query_gps(data_query, id_veiculo_query)
         dados_gps.to_csv('../data/treated/dados_gps.csv', index = False)
 
-
-    message = 'Acesso aos dados de GPS concluído com sucesso.'
+    message = 'Acesso aos sinais de GPS concluído com sucesso.'
     logging.debug(message)
     print(message)
     
     
-    # TRATAR OS DADOS COM A FUNÇÃO NOVA
+    ### --- 6.3 Tratar os sinais de GPS --- ###
     dados_gps = treat_gps(dados_gps)
     
     message = 'Tratamento de dados de GPS concluído com sucesso.'
     logging.debug(message)
     print(message)
 
-### --- 8. Classificar dados de GPS --- ###
-    
+
+    ### --- 6.4 Comparar amostra os sinais de GPS --- ###
     viagens_gps_classificadas_nan = viagens_conformidade_classificadas[viagens_conformidade_classificadas['status'].isna()]
     viagens_gps_classificadas_not_nan = viagens_conformidade_classificadas[viagens_conformidade_classificadas['status'].notna()]    
 
-    # Apply the function to the rows where status is NaN
+    # Aplicar a função quando o status da viagem for nan
     results = viagens_gps_classificadas_nan.apply(lambda row: check_gps(row, dados_gps), axis=1)
     viagens_gps_classificadas_nan['status'] = results.apply(lambda x: x[0])
     viagens_gps_classificadas_nan['servico_apurado'] = results.apply(lambda x: x[1])
 
-    # Concatenate the modified DataFrame with the DataFrame where status is not NaN
+    # Juntar tabela com status nan e status não nan
     viagens_gps_classificadas = pd.concat([viagens_gps_classificadas_nan, viagens_gps_classificadas_not_nan], ignore_index=True)
 
-    # Save to Excel
     viagens_gps_classificadas.to_excel('../data/treated/viagens_gps_classificadas.xlsx', index=False)
 
 
-### --- 9. Fazer os mapas em HTML para casos com GPS  --- ###
+
+
+
+    # Caso os dados de GPS da coluna servico_amostra sejam diferentes da coluna servico_apurado
+    # e a flag rpc estiver ativa:
+    # reprocessar as viagens que ocorreram antes de 16/11/2022 e repetir as etapas anteriores do GPS
+    
+
+
+
+
+    ### --- 7. Criar mapas em HTML para viagens da amostra não identificadas, mas com sinal de GPS --- ###
     
     status_check = 'Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra'
     viagens_gps_to_map = viagens_gps_classificadas[viagens_gps_classificadas['status'] == status_check]
-    
-    id_veiculo_query = viagens_gps_to_map['id_veiculo_amostra'].drop_duplicates().tolist()
-    data_query = viagens_gps_to_map['data'].drop_duplicates().tolist()
-    servico_query = viagens_gps_to_map['servico_amostra'].drop_duplicates().tolist()
-
-    data_query = ','.join([f"'{d}'" for d in data_query])
-    servico_query = ','.join([f"'{id}'" for id in servico_query])
-    
-    # shape    
-    if cache == "on":
+        
+    ### --- 7.1 Acessar dados dos shapes --- ###
+    if args.cache_on:
         dados_shape = pd.read_csv('../data/treated/dados_gps_shape.csv')
     
     else:
-        dados_shape = query_shape(data_query, servico_query) 
-        dados_shape.to_csv('../data/treated/dados_gps_shape.csv', index = False)   
+        dados_shape = query_shape(data_query, servico_query)
+        dados_shape.to_csv('../data/treated/dados_gps_shape.csv', index=False)
+               
+    dados_shape['servico'] = dados_shape['servico'].astype(str)
     
-    dados_shape['servico'] = dados_shape['servico'].astype(str) 
-           
-    # passar função para script de funções:
-    def check_map(row, df_check):
-        
-        # Filter the df_check by vehicle ID and time range
-        filtered_df = df_check[
-            (df_check['id_veiculo'] == row['id_veiculo_amostra']) & 
-            (df_check['timestamp_gps'] >= row['datetime_partida_amostra']) & 
-            (df_check['timestamp_gps'] <= row['datetime_chegada_amostra'])
-        ]
-
-        unique_veiculos = filtered_df['id_veiculo'].unique()
-        if not filtered_df.empty and row['status'] == status_check:   
-        
-            for veiculo in unique_veiculos:
-                
-                gps_mapa = filtered_df[filtered_df['id_veiculo'] == veiculo]
-                servico_do_veiculo = gps_mapa['servico'].iloc[0]
-                shape_mapa = dados_shape[dados_shape['servico'] == servico_do_veiculo]
-
-                map = create_trip_map(gps_mapa, shape_mapa)
-                # Pegando o valor da partida para nomear o arquivo
-                partida = viagens_gps_to_map[viagens_gps_to_map['id_veiculo_amostra'] == veiculo]['datetime_partida_amostra'].iloc[0]
-
-                hora_formatada = partida.strftime('%Hh%M')
-                
-                filename = f"./../data/output/maps/{veiculo} {partida.date()} {hora_formatada}.html"
-                map.save(filename)
-                    
-           
-    viagens_gps_to_map.apply(lambda row: check_map(row, dados_gps), axis=1)
-    
-    message = 'Mapas gerados com sucesso e disponíveis em data/output/maps.'
+    message = 'Shapes acessados com sucesso.'
     logging.debug(message)
     print(message)
     
     
-    # Adiciona a versão do modelo na tabela de status
-        
+    ### --- 7.2 Gerar mapas em HTML --- ###
+    message = 'Iniciando a geração dos mapas em HTML.'
+    logging.debug(message)
+    print(message)
+       
+    results = viagens_gps_to_map.apply(lambda row: automate_map(row, dados_gps, dados_shape, viagens_gps_to_map), axis=1)
+
+    message = 'Mapas em HTML gerados com sucesso e disponíveis no diretório data/output/maps.'
+    logging.debug(message)
+    print(message)
+    
+    ### --- 8. Ajustes finais --- ###
+    
+    ### --- 8.1 Adicionar coluna com a versão do modelo --- ###
     viagens_gps_classificadas['versao_modelo'] = modelo_versao
-        
-    # exportar em Excel
+    
+    ### --- 8.2 Exportar tabela final com status em xlsx e json --- ###  
+
     viagens_gps_classificadas.to_excel('../data/output/amostra_classificada.xlsx', index=False)
 
-    message = 'Arquivo com os status exportado com sucesso em xlsx.'
+    message = 'Arquivo com os status exportado com sucesso em xlsx no diretório data/output.'
     logging.debug(message)
     print(message)
      
     viagens_gps_classificadas.to_json('../data/output/amostra_classificada.json')
     
-    message = 'Arquivo com os status exportado com sucesso em json.'
+    message = 'Arquivo com os status exportado com sucesso em json no diretório data/output.'
     logging.debug(message)
     print(message)   
         
-    # imprimir no final e salvar um arquivo com um relatório (quantas viagens foram encontradas em cada situação)
+        
+    ### --- 8.3 Gerar um resumo das viagens processadas pelo algoritmo --- ###  
     
     message = 'Relatório da execução do algoritmo:'
     logging.debug(message)
     print(message)
-    # Criando um dataframe para armazenar os resultados
+    
+    # Criar um dataframe para armazenar os resultados
     tabela = pd.DataFrame(index=['Parecer definido','Parecer indefinido'], columns=['Contagem', 'Porcentagem'])
-    # Contando as ocorrências de cada caso
+    
+    # Contar as ocorrências de cada caso
     total_rows = len(viagens_gps_classificadas)
     tabela.loc['Parecer indefinido', 'Contagem'] = sum(viagens_gps_classificadas['status'] == status_check)
     tabela.loc['Parecer definido', 'Contagem'] = total_rows - tabela.loc['Parecer indefinido', 'Contagem']
 
-    # Calculando as porcentagens
+    # Calcular as porcentagens
     tabela['Porcentagem'] = (tabela['Contagem'] / total_rows) * 100    
     logging.debug(tabela)
-    print(tabela)        
-        
-else:
-    print("Execução do algoritmo finalizada.")
+    print(tabela)     
     
+    message = 'Execução do algoritmo finalizada.'
+    logging.debug(message)
+    print(message)   
+        
+else: # caso a resposta seja n na pergunta "Deseja continuar? (y/n):"
+    print("Execução do algoritmo finalizada.")

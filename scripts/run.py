@@ -61,14 +61,8 @@ parser = argparse.ArgumentParser(description="Execute o script run.py com opçõ
 
 # permite usar o cache para não baixar novamente os dados da última consulta no big query
 parser.add_argument('--cache', action='store_true', help="Ative o cache")
-
-# permite realizar o reprocessamento alterando o serviço do veículo para viagens antes de 16/11/2022
-parser.add_argument('--rpc', action='store_true', help="Ative o RPC")
-
 args = parser.parse_args()
-
 cache = "on" if args.cache else "off"
-rpc = "on" if args.rpc else "off"
 
 message = 'Dependências carregadas com sucesso. ' 
 logging.debug(message)
@@ -315,9 +309,8 @@ if proceed: # Executar caso o comando cotenha a flag "cache" ou a resposta seja 
 
 
 
-
+    # se a coluna com a flag rcp estiver ativa (1):
     # Caso os dados de GPS da coluna servico_amostra sejam diferentes da coluna servico_apurado
-    # e a flag rpc estiver ativa:
     # reprocessar as viagens que ocorreram antes de 16/11/2022 e repetir as etapas anteriores do GPS
     
 

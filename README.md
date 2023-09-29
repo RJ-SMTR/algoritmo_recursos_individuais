@@ -8,7 +8,7 @@ Desenvolvido por: Igor Laltuf
 
 O algoritmo presente neste repositório tem como objetivo classificar as viagens individuais presentes nos recursos de pagamento do subsídio. O funcionamento do algoritmo ocorre conforme mostra a figura abaixo:
 **Atualizar a imagem abaixo para a nova versão**
-<img src="./data/figures/algoritmo_funcionamento.png" alt="Descrição da imagem" width="800"/>
+<img src="./data/figures/funcionamento_algoritmo.jpg" alt="Descrição da imagem" width="800"/>
 
 O algoritmo recebe um arquivo contendo informações sobre as viagens e retorna um status, que pode ser:
 
@@ -61,6 +61,7 @@ Sobre os dados do arquivo:
 - a coluna sentido deve existir, mesmo que esteja vazia; e
 - os dados do arquivo `arquivo_de_exemplo.xlsx` no diretório `data/raw` devem ser usados apenas para fins de testes do algoritmo. Os dados das viagens que constam no arquivo foram alterados manualmente e não devem ser considerados para análises sobre as respectivas viagens.
 
+A flag reprocessamento se for 0 ... se for 1...
 
 
 3. Como executar o algoritmo

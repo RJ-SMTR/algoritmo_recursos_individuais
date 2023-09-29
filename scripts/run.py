@@ -19,16 +19,19 @@ paths = dict()
 paths["raw"] = current_path / 'data' / 'raw'
 paths["treated"] = current_path / 'data' / 'treated'
 paths["output"] = current_path / 'data' / 'output'
+paths["maps"] = current_path / 'data' / 'output' / 'maps'
 paths["figures"] = current_path / 'data' / 'figures'
 paths["scripts"] = current_path / 'scripts'
 paths["queries"] = current_path / 'scripts' / 'queries'
 paths["data_processing"] = current_path / 'scripts' / 'data_processing'
+paths["dataviz"] = current_path / 'scripts' / 'dataviz'
+
 
 for path in paths.values():
     if not os.path.exists(path):
         os.makedirs(path)      
         
-directories = [paths["scripts"], paths["queries"], paths["data_processing"]]
+directories = [paths["scripts"], paths["queries"], paths["data_processing"], paths["dataviz"]]
 
 for directory in directories:
     if directory not in sys.path:
@@ -39,6 +42,7 @@ from graphs import *
 from categorize_trips import *
 from queries_functions import *
 from treat_data import *
+from graphs import *
 
 ## --- Configuração dos arquivos de log --- ##
 current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")

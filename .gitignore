@@ -1,3 +1,7 @@
 env/
-scripts/log/log*
-data/output/maps
+scripts/log/*
+git add -f scripts/log/.gitkeep
+data/output/*
+git add -f data/output/.gitkeep
+data/treated/*
+git add -f data/treated/.gitkeep

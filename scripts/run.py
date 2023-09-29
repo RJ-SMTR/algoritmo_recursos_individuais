@@ -60,14 +60,14 @@ logging.basicConfig(
 parser = argparse.ArgumentParser(description="Execute o script run.py com opções.")
 
 # permite usar o cache para não baixar novamente os dados da última consulta no big query
-parser.add_argument('--cache_on', action='store_true', help="Ative o cache")
+parser.add_argument('--cache', action='store_true', help="Ative o cache")
 
 # permite realizar o reprocessamento alterando o serviço do veículo para viagens antes de 16/11/2022
 parser.add_argument('--rpc', action='store_true', help="Ative o RPC")
 
 args = parser.parse_args()
 
-cache = "on" if args.cache_on else "off"
+cache = "on" if args.cache else "off"
 rpc = "on" if args.rpc else "off"
 
 message = 'Dependências carregadas com sucesso. ' 
@@ -131,7 +131,7 @@ print(message)
 servico_query = amostra_tratada['servico'].drop_duplicates().tolist()
 servico_query = ','.join([f"'{id}'" for id in servico_query])
 
-if args.cache_on:
+if args.cache:
     tipo_servico = pd.read_csv('../data/treated/tipo_servico.csv')   
     
 else:
@@ -166,7 +166,7 @@ print(message)
 
 ### --- 4.1 Acessar dados das viagens completas --- ###
 
-if args.cache_on:
+if args.cache:
     viagem_completa = pd.read_csv('../data/treated/viagem_completa.csv')   
     
 else:
@@ -215,7 +215,7 @@ data_query = ','.join([f"'{d}'" for d in data_query])
 id_veiculo_query = ','.join([f"'{id}'" for id in id_veiculo_query])
 
 # Acessar os dados
-if args.cache_on:
+if args.cache:
     viagem_conformidade = pd.read_csv('../data/treated/viagem_conformidade.csv')  
     
 else:
@@ -264,7 +264,7 @@ estimativa_custo = (datas_unicas * 390) / 1000
 
 proceed = False
 
-if not args.cache_on:
+if not args.cache:
     response = ""
     while response not in ['y', 'n']:
         response = input(f"Estimativa de consumo de {estimativa_custo} GB para consulta de dados de GPS. Deseja continuar? (y/n): ").lower()
@@ -274,11 +274,11 @@ if not args.cache_on:
 else:
     proceed = True
 
-if proceed: # Executar caso o comando cotenha a flag "cache_on" ou a resposta seja y
+if proceed: # Executar caso o comando cotenha a flag "cache" ou a resposta seja y
     
         
     ### --- 6.2 Acessar os sinais de GPS --- ###
-    if args.cache_on:
+    if args.cache:
         dados_gps = pd.read_csv('../data/treated/dados_gps.csv') 
     
     else:
@@ -330,7 +330,7 @@ if proceed: # Executar caso o comando cotenha a flag "cache_on" ou a resposta se
     viagens_gps_to_map = viagens_gps_classificadas[viagens_gps_classificadas['status'] == status_check]
         
     ### --- 7.1 Acessar dados dos shapes --- ###
-    if args.cache_on:
+    if args.cache:
         dados_shape = pd.read_csv('../data/treated/dados_gps_shape.csv')
     
     else:

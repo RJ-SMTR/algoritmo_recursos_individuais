@@ -71,8 +71,14 @@ Sobre os dados do arquivo:
 python scripts/run.py
 ```
 
+Flags cache e rpc (explicar cada uma )
+```bash
+python scripts/run.py --cache
+```
 
-Opção de cache on ou off
+```bash
+python scripts/run.py --rpc
+```
 
 
 

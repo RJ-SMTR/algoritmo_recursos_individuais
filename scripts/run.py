@@ -109,7 +109,6 @@ logging.debug(message)
 print(message)
 
 
-### --- 3. Identificar se a linha é circular --- ###  
 
 # Quais são os dias e o id_veiculo presentes na amostra
 id_veiculo_query = amostra_tratada['id_veiculo'].drop_duplicates().tolist()
@@ -118,47 +117,11 @@ data_query = ','.join([f"'{d}'" for d in data_query])
 id_veiculo_query = ','.join([f"'{id}'" for id in id_veiculo_query])
 
 
-message = 'Verificando se existem linhas circulares.'
-logging.debug(message)
-print(message)
-
-servico_query = amostra_tratada['servico'].drop_duplicates().tolist()
-servico_query = ','.join([f"'{id}'" for id in servico_query])
-
-if args.cache:
-    tipo_servico = pd.read_csv('../data/treated/tipo_servico.csv')   
-    
-else:
-    tipo_servico = query_tipo_linha(data_query, servico_query)
-    tipo_servico.to_csv('../data/treated/tipo_servico.csv', index = False)
-
-tipo_servico['servico_circular'] = np.where(tipo_servico['sentido'] == 'C', 1, 0)
-tipo_servico = tipo_servico.drop(columns=['sentido'])
-
-tipo_servico['data'] = tipo_servico['data'].astype(str)
-tipo_servico['servico'] = tipo_servico['servico'].astype(str)
-tipo_servico = tipo_servico.drop_duplicates()
-
-amostra_tratada = amostra_tratada.merge(tipo_servico, on=['data', 'servico'])
-
-message = 'Identificação de linhas finalizada com sucesso.'
-logging.debug(message)
-print(message)
 
 
+### --- 3. VIAGENS COMPLETAS --- ###
 
-#### FAZER ESTA PARTE
-# esta coluna nova indica se o servico é circular servico_circular = 1
-# O tratamento deve ser diferente para elas!!
-
-
-
-
-
-
-### --- 4. VIAGENS COMPLETAS --- ###
-
-### --- 4.1 Acessar dados das viagens completas --- ###
+### --- 3.1 Acessar dados das viagens completas --- ###
 
 if args.cache:
     viagem_completa = pd.read_csv('../data/treated/viagem_completa.csv')   
@@ -171,7 +134,7 @@ message = 'Acesso aos dados de viagens completas concluído com sucesso.'
 logging.debug(message)
 print(message)
 
-### --- 4.2 Tratar dados das viagens completas --- ###
+### --- 3.2 Tratar dados das viagens completas --- ###
 
 viagem_completa = treat_trips(viagem_completa)
 
@@ -181,7 +144,7 @@ print(message)
 
 
 
-### --- 4.3 Comparar amostra com as viagens completas --- ###
+### --- 3.3 Comparar amostra com as viagens completas --- ###
 
 viagens_completas_classificadas = check_trips(amostra_tratada, viagem_completa,
                                     "Viagem identificada e já paga")
@@ -194,9 +157,9 @@ print(message)
 
 
 
-### --- 5. VIAGENS CONFORMIDADE --- ###
+### --- 4. VIAGENS CONFORMIDADE --- ###
 
-### --- 5.1 Acessar dados das viagens conformidade --- ###
+### --- 4.1 Acessar dados das viagens conformidade --- ###
 
 # Quais são os dias e id_veiculo ainda não classificados
 
@@ -216,7 +179,7 @@ else:
     viagem_conformidade = query_viagem_conformidade(data_query, id_veiculo_query)
     viagem_conformidade.to_csv('../data/treated/viagem_conformidade.csv', index = False)
 
-### --- 5.2 Tratar dados das viagens conformidade --- ###
+### --- 4.2 Tratar dados das viagens conformidade --- ###
 viagem_conformidade = treat_trips(viagem_conformidade)
 
 message = 'Acesso aos dados de viagens conformidade concluído com sucesso.'
@@ -224,7 +187,7 @@ logging.debug(message)
 print(message)
 
 
-### --- 5.3 Comparar amostra com as viagens conformidade --- ###
+### --- 4.3 Comparar amostra com as viagens conformidade --- ###
 
 viagens_conformidade_classificadas = check_trips(viagens_completas_classificadas, viagem_conformidade,
                                     "Viagem inválida - Não atingiu % de GPS ou trajeto correto")
@@ -235,6 +198,89 @@ message = 'Classificação das viagens conformidade concluída com sucesso.'
 logging.debug(message)
 print(message)
 
+
+print(viagens_conformidade_classificadas)
+
+
+
+### --- 5. Viagens circulares
+
+### --- 5.1 Identificar se a linha é circular --- ###  
+# Esta etapa serve para verificar se a viagem do recurso na verdade é uma meia viagem pertencente
+# a uma viagem circular. A ideia é identificar a viagem circular a qual pertence a meia viagem
+
+message = 'Verificando se existem linhas circulares.'
+logging.debug(message)
+print(message)
+
+# verifica os serviços e as datas presentes na amostra
+servico_query = amostra_tratada['servico'].drop_duplicates().tolist()
+servico_query = ','.join([f"'{id}'" for id in servico_query])
+data_query = amostra_tratada['data'].drop_duplicates().tolist()
+data_query = ','.join([f"'{d}'" for d in data_query])
+
+if args.cache:
+    tipo_servico = pd.read_csv('../data/treated/tipo_servico.csv')   
+    
+else:
+    tipo_servico = query_tipo_linha(data_query, servico_query, include_sentido_shape=True)
+    tipo_servico.to_csv('../data/treated/tipo_servico.csv', index = False)
+
+
+tipo_servico['circular_dividida'] = np.where(
+    (tipo_servico['sentido'] == 'C') & (tipo_servico['sentido_shape'] != 'C'), 
+    1,  # a linha circular tem o shape dividido em ida e volta
+    0   # a linha circular não tem o shape dividido em ida e volta
+)
+
+tipo_servico = tipo_servico.drop(columns=['sentido','sentido_shape'])
+tipo_servico['data'] = tipo_servico['data'].astype(str)
+tipo_servico['servico'] = tipo_servico['servico'].astype(str)
+tipo_servico = tipo_servico.drop_duplicates()
+viagens_conformidade_classificadas['servico_amostra'] = viagens_conformidade_classificadas['servico_amostra'].astype(str)
+viagens_conformidade_classificadas['data'] = viagens_conformidade_classificadas['data'].astype(str)
+
+viagens_conformidade_classificadas = viagens_conformidade_classificadas.merge(
+    tipo_servico, 
+    left_on=['data', 'servico_amostra'], 
+    right_on=['data', 'servico']
+)
+
+viagens_conformidade_classificadas.drop_duplicates()
+
+viagens_conformidade_classificadas = viagens_conformidade_classificadas.drop(columns=['servico'])
+
+viagens_conformidade_classificadas # este df tem uma coluna chamada circular_dividida que tem o valor 1
+
+
+
+
+### --- 5.2 Identificar viagens circulares que ainda não foram classificadas --- ###  
+
+
+# Criar um df com as viagens que serão procuradas
+
+df_circular_na = viagens_conformidade_classificadas[
+    (viagens_conformidade_classificadas['circular_dividida'] == 1) &
+    pd.isna(viagens_conformidade_classificadas['status'])
+]
+
+# Criando o DataFrame df_demais_casos
+df_demais_casos = viagens_conformidade_classificadas.drop(df_circular_na.index)
+
+
+if not df_circular_na.empty:
+    # Código a ser executado caso df_circular não esteja vazio
+    print("Possíveis meias viagens circulares que constam na amostra:")
+    print(df_circular_na)   
+    
+    # Esta função classifica as meia viagens circulares que não foram identificadas nos passos anteriores
+    df_circular_na = check_circular_trip(df_circular_na, viagem_completa, viagem_conformidade)
+                                 
+    viagens_conformidade_classificadas = pd.concat([df_circular_na, df_demais_casos], ignore_index=True)      
+
+else:
+    print("Não existem viagens circulares divididas em shapes de ida e volta.")
 
 
 
@@ -350,6 +396,9 @@ if proceed: # Executar caso o comando cotenha a flag "cache" ou a resposta seja 
     
     ### --- 8. Ajustes finais --- ###
     
+    # remover as colunas flag_reprocessamento e circular_dividida
+    
+    
     ### --- 8.1 Adicionar coluna com a versão do modelo --- ###
     viagens_gps_classificadas['versao_modelo'] = modelo_versao
     
@@ -392,4 +441,4 @@ if proceed: # Executar caso o comando cotenha a flag "cache" ou a resposta seja 
     print(message)   
         
 else: # caso a resposta seja n na pergunta "Deseja continuar? (y/n):"
-    print("Execução do algoritmo finalizada.")
+    print("Execução do algoritmo finalizada com sucesso!")

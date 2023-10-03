@@ -207,3 +207,72 @@ def check_gps(row, df_check):
 # Iterar para gerar arquivos com mapas
 
 
+# Classificar meias viagens da amostra
+# Em alguns casos, recebemos meias viagens circulares como se fossem viagens completas.
+# A função abaixo identifica estas viagens e atribui a elas o mesmo status que a outra meia viagem que, junto com ela
+# totalizam uma viagem circular. A comparação é feita com os dados da tabelas de viagem_completa e viagem_conformidade
+
+
+def check_circular_trip(viagens_circulares_sem_status, viagem_completa, viagem_conformidade):
+    # Certifique-se de que as colunas datetime estão em formato datetime
+    viagens_circulares_sem_status['datetime_partida_amostra'] = pd.to_datetime(viagens_circulares_sem_status['datetime_partida_amostra'])
+    viagens_circulares_sem_status['id_veiculo_amostra'] = viagens_circulares_sem_status['id_veiculo_amostra'].astype(str)
+    
+    viagem_completa['datetime_partida'] = pd.to_datetime(viagem_completa['datetime_partida'])
+    viagem_completa['datetime_chegada'] = pd.to_datetime(viagem_completa['datetime_chegada'])
+    
+    viagem_conformidade['datetime_partida'] = pd.to_datetime(viagem_conformidade['datetime_partida'])
+    viagem_conformidade['datetime_chegada'] = pd.to_datetime(viagem_conformidade['datetime_chegada'])        
+    
+    
+    for index, row in viagens_circulares_sem_status.iterrows():
+        # Primeira verificação com viagem_completa
+        mask_completa = (
+            (viagem_completa['id_veiculo'] == row['id_veiculo_amostra']) &
+            (viagem_completa['data'] == row['data']) & 
+            (viagem_completa['datetime_partida'] <= row['datetime_partida_amostra']) & 
+            (viagem_completa['datetime_chegada'] >= row['datetime_partida_amostra'])
+        )
+
+        # Se existir uma linha correspondente, atualize o status e copie os valores, depois continue para a próxima iteração
+        if viagem_completa[mask_completa].shape[0] > 0:
+            viagens_circulares_sem_status.loc[index, 'status'] = "Viagem identificada e já paga"
+            matching_row = viagem_completa[mask_completa].iloc[0]
+            viagens_circulares_sem_status.loc[index, ['data_apurado', 'id_veiculo_apurado', 'servico_apurado', 
+                                            'sentido_apurado', 'datetime_partida_apurado', 
+                                            'datetime_chegada_apurado']] = matching_row[['data', 'id_veiculo', 
+                                                                                        'servico', 'sentido', 
+                                                                                        'datetime_partida', 
+                                                                                        'datetime_chegada']].values
+            
+            
+            continue
+        
+        # Segunda verificação com viagem_conformidade se a primeira falhar
+        mask_conformidade = (
+            (viagem_conformidade['id_veiculo'] == row['id_veiculo_amostra']) &
+            (viagem_conformidade['data'] == row['data']) & 
+            (viagem_conformidade['datetime_partida'] <= row['datetime_partida_amostra']) & 
+            (viagem_conformidade['datetime_chegada'] >= row['datetime_partida_amostra'])
+        )
+        
+        # Se existir uma linha correspondente, atualize o status e copie os valores
+        if viagem_conformidade[mask_conformidade].shape[0] > 0:
+            viagens_circulares_sem_status.loc[index, 'status'] = "Viagem inválida - Não atingiu % de GPS ou trajeto correto"
+            matching_row = viagem_conformidade[mask_conformidade].iloc[0]
+            viagens_circulares_sem_status.loc[index, ['data_apurado', 'id_veiculo_apurado', 'servico_apurado', 
+                                            'sentido_apurado', 'datetime_partida_apurado', 
+                                            'datetime_chegada_apurado']] = matching_row[['data', 'id_veiculo', 
+                                                                                        'servico', 'sentido', 
+                                                                                        'datetime_partida', 
+                                                                                        'datetime_chegada']].values
+            
+            
+    return viagens_circulares_sem_status
+
+
+
+
+
+
+

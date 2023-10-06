@@ -1,13 +1,30 @@
-# Carregar bibliotecas
+### --- 1. Carregar bibliotecas --- ###
+
 import pandas as pd
 import numpy as np
 
 
-# 1 - Classifica as viagens do gabarito do mesmo veículo e com horários e dias sobrepostos
-# como "Viagem inválida - sobreposição de viagem"
+### --- 2. Função de verificação de viagens sobrepostas --- ###
 
 def remove_overlapping_trips(df: pd.DataFrame) -> pd.DataFrame:
-    # Fazendo uma cópia do dataframe original para evitar mudanças indesejadas no dataframe original
+    
+    """
+    Classifica o status das viagens da amostra como "Viagem inválida - sobreposição de viagem" nos casos 
+    em que um mesmo veículo tem duas viagens no mesmo intervalo de tempo.
+    
+    Parâmetros:
+    df (dataframe): Dataframe contendo a amostra.
+    
+    Retorna:
+    dataframe: Um dataframe com a coluna status preenchida para casos de viagens sobrepostas.
+    
+    Exemplos:
+    >>> remove_overlapping_trips(amostra)
+    
+    Notas:
+    Caso o mesmo veículo inicie uma viagem no mesmo minuto do término da viagem anterior, não é considerada sobreposição de viagem.
+    """
+    
     df_processed = df.copy()
     
     # Converter as colunas para o tipo datetime
@@ -41,17 +58,28 @@ def remove_overlapping_trips(df: pd.DataFrame) -> pd.DataFrame:
                         
     return df_processed
 
-# ex: remove_overlapping_trips(amostra)
 
-
-
-
-# 2 - Função check_trips
-# Esta função serve para comparar a amostra com as tabelas de viagens completas e conformidade.
-# Ela recebe as duas tabelas, o intervalo que deve ser usado no join entre as colunas datetime_partida
-# das duas tabelas (em minutos) e o status que as linhas que derem match devem receber.
+### --- 3. Função de classificação de viagens --- ###
 
 def check_trips(amostra: pd.DataFrame, query_trip_table: pd.DataFrame, status: str) -> pd.DataFrame:
+        
+    """
+    Verifica quais viagens do dataframe query_trip_table têm o datetime_partida dentro de um intervalo
+    de + ou - 10 minutos do datetime do dataframe amostra. Para viagens com duração menor do que 10 minutos,
+    o intervalo de comparação é de + ou - 5 minutos. A função também classifica o status de acordo com a string
+    que é passada no argumento status da função.
+    
+    Parâmetros:
+    amostra (dataframe): Dataframe contendo a amostra.
+    query_trip_table (dataframe): Dataframe contendo viagens completas ou viagem conformidade.
+    status(str): Valor que deve ser atribuido na coluna status caso a condição seja satisfeita.
+    
+    Retorna:
+    dataframe: Um dataframe com a coluna status preenchida para casos de viagens encontradas.
+    
+    Exemplos:
+    >>> check_trips(amostra, viagem_completa, "Viagem circular identificada e já paga")
+    """        
         
     # Identificar colunas que iniciam com os prefixos abaixo
     for prefix in ['id_veiculo', 'datetime_partida', 'datetime_chegada', 'servico', 'sentido']:
@@ -104,10 +132,7 @@ def check_trips(amostra: pd.DataFrame, query_trip_table: pd.DataFrame, status: s
                 (tabela_comparativa['datetime_partida_amostra'] + 
                 pd.to_timedelta(tabela_comparativa['intervalo'], unit="m")))
 
-
-    tabela_comparativa = tabela_comparativa[condition]
-          
-     
+    tabela_comparativa = tabela_comparativa[condition]  
      
     # Remover a chave temporária e outras colunas desnecessárias
     tabela_comparativa.drop(columns=['tmp_key'], inplace=True)
@@ -123,7 +148,6 @@ def check_trips(amostra: pd.DataFrame, query_trip_table: pd.DataFrame, status: s
 
     tabela_comparativa.loc[condition, 'status'] = status + " para serviço diferente da amostra"
         
-    
     
     # Verificar se existem dados duplicados no cruzamento de dados
     unique_data = tabela_comparativa[['id_veiculo_apurado', 'datetime_partida_apurado']].drop_duplicates()
@@ -157,8 +181,6 @@ def check_trips(amostra: pd.DataFrame, query_trip_table: pd.DataFrame, status: s
     tabela_comparativa['unique_key'] = tabela_comparativa['id_veiculo_amostra'].astype(str) + '_' + tabela_comparativa['datetime_partida_amostra'].astype(str)
     
     
-    
-    
     # Identificando as linhas que estão apenas em amostra_nan e não em tabela_comparativa
     amostra_nan = amostra_nan.loc[~amostra_nan['unique_key'].isin(tabela_comparativa['unique_key'])]
     
@@ -175,22 +197,30 @@ def check_trips(amostra: pd.DataFrame, query_trip_table: pd.DataFrame, status: s
 
 
     return final_data 
-# ex: check_trips(amostra, viagem_completa, "Viagem identificada e já paga")
 
 
 
-
-# Classificar dados de GPS
+### --- 4. Função de classificação de dados de GPS --- ###
 
 def check_gps(row, df_check):
-    # Filter the df_check by vehicle ID and time range
+    """
+    Verifica se o veículo teve sinal de GPS no momento da viagem e retorna o status informando
+    se ele operou no serviço correto ou se não houve sinal de GPS no momento da viagem.
+        
+    Parâmetros:
+    row: Linha do dataframe da amostra com as viagens não identificadas.
+    df_check (dataframe): Dataframe contendo os dados de GPS.   
+
+    """     
+    
+    # Filtrar df_check pelo id_veiculo e pelo intervalo
     filtered_df = df_check[
         (df_check['id_veiculo'] == row['id_veiculo_amostra']) & 
         (df_check['timestamp_gps'] >= row['datetime_partida_amostra']) & 
         (df_check['timestamp_gps'] <= row['datetime_chegada_amostra'])
     ]
     
-    # Get unique services from filtered_df
+    # Identificar serviços
     unique_servicos = filtered_df['servico'].unique()
     servico_apurado = ', '.join(unique_servicos)
 
@@ -203,18 +233,25 @@ def check_gps(row, df_check):
         return ("Sinal de GPS não encontrado para o veículo no horário da viagem", np.nan)
 
 
-
-# Iterar para gerar arquivos com mapas
-
+### --- 5. Função de classificação de viagens circulares --- ###
 
 # Classificar meias viagens da amostra
-# Em alguns casos, recebemos meias viagens circulares como se fossem viagens completas.
-# A função abaixo identifica estas viagens e atribui a elas o mesmo status que a outra meia viagem que, junto com ela
-# totalizam uma viagem circular. A comparação é feita com os dados da tabelas de viagem_completa e viagem_conformidade
-
 
 def check_circular_trip(viagens_circulares_sem_status, viagem_completa, viagem_conformidade):
-    # Certifique-se de que as colunas datetime estão em formato datetime
+    """ 
+    Esta função deve ser usada apenas nos casos em que a amostra recebida contém dados de uma viagem
+    circular, mas está separada em ida e volta. Ou seja, a amostra (viagens_circulares_sem_status)
+    deve conter o sentido "I" ou "V", enquanto os dados de viagem_completa e viagem_conformidade
+    devem conter o sentido "C". Esta função faz a equivalência entre as viagens da amostra e as
+    viagens completas e de conformidade.
+    
+    Parâmetros:
+    viagens_circulares_sem_status (dataframe): Dataframe da amostra com as viagens não identificadas.
+    viagem_completa (dataframe): Dataframe contendo os dados das viagens completas.
+    viagem_conformidade (dataframe): Dataframe contendo os dados das viagens conformidade.
+    """  
+    
+    # Setar tipos de dados das colunas
     viagens_circulares_sem_status['datetime_partida_amostra'] = pd.to_datetime(viagens_circulares_sem_status['datetime_partida_amostra'])
     viagens_circulares_sem_status['id_veiculo_amostra'] = viagens_circulares_sem_status['id_veiculo_amostra'].astype(str)
     
@@ -269,10 +306,3 @@ def check_circular_trip(viagens_circulares_sem_status, viagem_completa, viagem_c
             
             
     return viagens_circulares_sem_status
-
-
-
-
-
-
-

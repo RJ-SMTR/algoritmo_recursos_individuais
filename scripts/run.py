@@ -127,12 +127,13 @@ if args.cache:
     viagem_completa = pd.read_csv('../data/treated/viagem_completa.csv')   
     
 else:
-    viagem_completa = query_viagem_completa(data_query, id_veiculo_query)
+    viagem_completa = query_viagem_completa(data_query, id_veiculo_query, reprocessed=False)
     viagem_completa.to_csv('../data/treated/viagem_completa.csv', index = False)
 
 message = 'Acesso aos dados de viagens completas concluído com sucesso.'
 logging.debug(message)
 print(message)
+
 
 ### --- 3.2 Tratar dados das viagens completas --- ###
 
@@ -176,7 +177,7 @@ if args.cache:
     viagem_conformidade = pd.read_csv('../data/treated/viagem_conformidade.csv')  
     
 else:
-    viagem_conformidade = query_viagem_conformidade(data_query, id_veiculo_query)
+    viagem_conformidade = query_viagem_conformidade(data_query, id_veiculo_query, reprocessed=False)
     viagem_conformidade.to_csv('../data/treated/viagem_conformidade.csv', index = False)
 
 ### --- 4.2 Tratar dados das viagens conformidade --- ###
@@ -338,7 +339,7 @@ if proceed: # Executar caso o comando cotenha a flag "cache" ou a resposta seja 
     print(message)
 
 
-    ### --- 6.4 Comparar amostra os sinais de GPS --- ###
+    ### --- 6.4 Comparar amostra com os sinais de GPS --- ###
     viagens_gps_classificadas_nan = viagens_conformidade_classificadas[viagens_conformidade_classificadas['status'].isna()]
     viagens_gps_classificadas_not_nan = viagens_conformidade_classificadas[viagens_conformidade_classificadas['status'].notna()]    
 
@@ -350,24 +351,76 @@ if proceed: # Executar caso o comando cotenha a flag "cache" ou a resposta seja 
     # Juntar tabela com status nan e status não nan
     viagens_gps_classificadas = pd.concat([viagens_gps_classificadas_nan, viagens_gps_classificadas_not_nan], ignore_index=True)
 
-    viagens_gps_classificadas.to_excel('../data/treated/viagens_gps_classificadas.xlsx', index=False)
+    viagens_gps_classificadas.to_excel('../data/treated/viagens_gps_classificadas.xlsx', index = False)
 
-
-
-
-    # se a coluna com a flag rcp estiver ativa (1):
-    # Caso os dados de GPS da coluna servico_amostra sejam diferentes da coluna servico_apurado
-    # reprocessar as viagens que ocorreram antes de 16/11/2022 e repetir as etapas anteriores do GPS
     
+    
+    # PRECISO EDITAR A TABELA DE GPS!!!!!!
+    
+    ### -- reprocessamento --###
+    # Gerar arquivo csv para reprocessamento caso a viagem seja antes de 16/11/2022
+    # e o valor da coluna flag_reprocessamento = 1
+        
+    viagens_gps_classificadas['data'] = pd.to_datetime(viagens_gps_classificadas['data'])
+    data_limite = datetime.strptime('2022-11-16', '%Y-%m-%d')
 
+    linhas_condicao = viagens_gps_classificadas[
+        (viagens_gps_classificadas['flag_reprocessamento'] == 1) & 
+        (viagens_gps_classificadas['data'] <= data_limite) & 
+        (viagens_gps_classificadas['servico_amostra'] != viagens_gps_classificadas['servico_apurado'])
+    ]
 
+    # Verificar se há linhas que atendem à condição
+    if not linhas_condicao.empty:
+        print("As seguintes linhas atenderam à condição de reprocessamento do serviço:")
+        
+        print(linhas_condicao)
+                
+        linhas_condicao.to_csv('./../../queries-rj-smtr/data/reprocessar.csv')
+        
+        input("Execução pausada. Execute o modelo no DBT e pressione enter para continuar...")        
+    
+        # Baixar e classificar viagens completas reprocessadas
+        if args.cache:
+            viagem_completa_reprocessada = pd.read_csv('../data/treated/viagem_completa_reprocessada.csv')   
+            
+        else:
+            viagem_completa_reprocessada = query_viagem_completa(data_query, id_veiculo_query, reprocessed=True)
+            viagem_completa_reprocessada.to_csv('../data/treated/viagem_completa_reprocessada.csv', index = False)
+            
+        viagem_completa_reprocessada = treat_trips(viagem_completa_reprocessada)
+        
+        
+        linhas_condicao = check_trips(linhas_condicao, viagem_completa_reprocessada,
+                                    "Viagem a ser paga após o reprocessamento")
 
+        linhas_condicao.to_excel('../data/treated/viagem_completa_classificada.xlsx', index = False)
+
+        # Baixar e classificar viagens conformidade reprocessadas
+        
+        if args.cache:
+            viagem_conformidade_reprocessada = pd.read_csv('../data/treated/viagem_conformidade_reprocessada.csv')   
+            
+        else:
+            viagem_conformidade_reprocessada = query_viagem_conformidade(data_query, id_veiculo_query, reprocessed=True)
+            viagem_conformidade_reprocessada.to_csv('../data/treated/viagem_conformidade_reprocessada.csv', index = False)
+            
+        viagem_conformidade_reprocessada = treat_trips(viagem_conformidade_reprocessada)
+        
+        
+        linhas_condicao = check_trips(linhas_condicao, viagem_conformidade_reprocessada,
+                                    "Viagem inválida devido a conformidade mesmo após o reprocessamento")
+
+        linhas_condicao.to_excel('../data/treated/viagem_conformidade_classificada.xlsx', index = False)
+
+        
 
     ### --- 7. Criar mapas em HTML para viagens da amostra não identificadas, mas com sinal de GPS --- ###
     
+    # status para criar mapa de GPS
     status_check = 'Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra'
     viagens_gps_to_map = viagens_gps_classificadas[viagens_gps_classificadas['status'] == status_check]
-        
+    
     ### --- 7.1 Acessar dados dos shapes --- ###
     if args.cache:
         dados_shape = pd.read_csv('../data/treated/dados_gps_shape.csv')

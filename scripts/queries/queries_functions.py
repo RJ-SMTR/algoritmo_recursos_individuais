@@ -1,8 +1,29 @@
 
+### --- 1. Carregar bibliotecas --- ###
 import basedosdados as bd
 import pandas as pd
 
-def query_viagem_completa(data, id_veiculo):
+
+
+### --- 2. Consultar do Big Query as viagens completas --- ###
+
+def query_viagem_completa(data, id_veiculo, reprocessed=False):
+    
+    """
+    Faz a consulta no Big Query na tabela de viagem_completa em produção ou na versão reprocessada em dev
+    com a alteração do serviço no sinal de GPS para casos antes de 16/11/2022.
+        
+    """     
+    
+    table = f"""
+    `rj-smtr.projeto_subsidio_sppo.viagem_completa` 
+    WHERE 
+      data IN ({data})
+      AND id_veiculo IN ({id_veiculo})
+      """
+    if reprocessed:
+      table = "`rj-smtr-dev.projeto_subsidio_sppo_recursos_reprocessado.viagem_completa`"
+    
     q = f"""
     SELECT
       data,
@@ -12,10 +33,7 @@ def query_viagem_completa(data, id_veiculo):
       datetime_partida,
       datetime_chegada
     FROM
-      `rj-smtr.projeto_subsidio_sppo.viagem_completa`
-    WHERE
-      data IN ({data})
-      AND id_veiculo IN ({id_veiculo})
+      {table}
     """   
     dados = bd.read_sql(q, from_file=True)        
     
@@ -26,8 +44,25 @@ def query_viagem_completa(data, id_veiculo):
   
     return dados
 
-# query viagem_conformidade
-def query_viagem_conformidade(data, id_veiculo):
+
+### --- 3. Consultar do Big Query as viagens conformidade --- ###
+
+    """
+    Faz a consulta no Big Query na tabela de viagem_conformidade em produção ou na versão reprocessada em dev
+    com a alteração do serviço no sinal de GPS para casos antes de 16/11/2022.
+        
+    """   
+def query_viagem_conformidade(data, id_veiculo, reprocessed=False):
+  
+    table = f"""
+    `rj-smtr.projeto_subsidio_sppo.viagem_conformidade` 
+    WHERE 
+      data IN ({data})
+      AND id_veiculo IN ({id_veiculo})
+      """
+    if reprocessed:
+      table = "`rj-smtr-dev.projeto_subsidio_sppo_recursos_reprocessado.viagem_completa`"
+      
     q = f"""
     SELECT
       data,
@@ -37,10 +72,7 @@ def query_viagem_conformidade(data, id_veiculo):
       datetime_partida,
       datetime_chegada
     FROM
-      `rj-smtr.projeto_subsidio_sppo.viagem_conformidade`
-    WHERE
-      data IN ({data})
-      AND id_veiculo IN ({id_veiculo})
+      {table}
     """   
     dados = bd.read_sql(q, from_file=True)      
     
@@ -51,7 +83,8 @@ def query_viagem_conformidade(data, id_veiculo):
     return dados
 
 
-# query gps_sppo
+### --- 4. Consultar do Big Query os dados de GPS --- ###
+
 def query_gps(data, id_veiculo):
     q = f"""
     SELECT
@@ -73,7 +106,8 @@ def query_gps(data, id_veiculo):
     else:
         pass
     return dados
-      
+  
+### --- 5. Consultar do Big Query os dados de viagem planejada --- ###   
   
 # query shape - viagem planejada
 def query_shape(data, servico):
@@ -98,27 +132,10 @@ def query_shape(data, servico):
     return dados
 
 
-# query shape - viagem planejada
-# def query_tipo_linha(data, servico):
-#     q = f"""
-#     SELECT
-#     data,
-#     servico,
-#     sentido,
-#     sentido_shape
-#     FROM
-#       `rj-smtr.projeto_subsidio_sppo.viagem_planejada`
-#     WHERE
-#       DATA IN ({data})
-#       AND servico IN ({servico})
-#     """   
-#     dados = bd.read_sql(q, from_file=True)
-#     if dados.empty:
-#         print("Não foram encontrados dados do planejados para o dia.")
-#     else:
-#         pass    
-#     return dados
-  
+
+### --- 6. Verificar o tipo de servico (circular ou ida e volta) --- ###
+
+
 def query_tipo_linha(data, servico, include_sentido_shape=False):
   # usar include_sentido_shape para não pegar dados de sentido_shape
     # Verificando se deve incluir a coluna 'sentido_shape' na query.

@@ -1,7 +1,10 @@
 from graphs import *
 
 def automate_map(row, df_check, dados_shape, viagens_gps_to_map):
-
+    """
+    Automatiza e salva em HTML os mapas das viagens.
+    
+    """         
    
     filtered_df = df_check[
         (df_check['id_veiculo'] == row['id_veiculo_amostra']) &

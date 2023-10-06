@@ -1,4 +1,4 @@
-# Algoritmo de Classificação de Recursos para Viagens Individuais
+# Algoritmo de Classificação de Recursos (ACRe)
 
 ---
 

@@ -355,7 +355,15 @@ if proceed: # Executar caso o comando cotenha a flag "cache" ou a resposta seja 
 
     
     
-    # PRECISO EDITAR A TABELA DE GPS!!!!!!
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     ### -- reprocessamento --###
     # Gerar arquivo csv para reprocessamento caso a viagem seja antes de 16/11/2022
@@ -364,19 +372,33 @@ if proceed: # Executar caso o comando cotenha a flag "cache" ou a resposta seja 
     viagens_gps_classificadas['data'] = pd.to_datetime(viagens_gps_classificadas['data'])
     data_limite = datetime.strptime('2022-11-16', '%Y-%m-%d')
 
-    linhas_condicao = viagens_gps_classificadas[
-        (viagens_gps_classificadas['flag_reprocessamento'] == 1) & 
-        (viagens_gps_classificadas['data'] <= data_limite) & 
-        (viagens_gps_classificadas['servico_amostra'] != viagens_gps_classificadas['servico_apurado'])
-    ]
+    condicao = (
+    (viagens_gps_classificadas['flag_reprocessamento'] == 1) & 
+    (viagens_gps_classificadas['data'] <= data_limite) & 
+    (viagens_gps_classificadas['servico_amostra'] != viagens_gps_classificadas['servico_apurado']) &
+    (viagens_gps_classificadas['status'] != 'Viagem identificada e já paga')
+    )
 
+    linhas_condicao = viagens_gps_classificadas[condicao]
+    
+    demais_linhas = viagens_gps_classificadas[~condicao]
+    
     # Verificar se há linhas que atendem à condição
     if not linhas_condicao.empty:
         print("As seguintes linhas atenderam à condição de reprocessamento do serviço:")
         
         print(linhas_condicao)
+              
+        # Limpar os campos que serão reprocessados:
+        columns_to_na = [
+        "status", "data_apurado", "id_veiculo_apurado", "servico_apurado",
+        "sentido_apurado", "datetime_partida_apurado", "datetime_chegada_apurado"
+        ]   
+
+# Substituindo todos os valores nas colunas selecionadas por NaN
+        linhas_condicao.loc[:, columns_to_na] = np.nan
                 
-        linhas_condicao.to_csv('./../../queries-rj-smtr/data/reprocessar.csv')
+        linhas_condicao.to_csv('./../../queries-rj-smtr/data/reprocessar.csv', index = False)
         
         input("Execução pausada. Execute o modelo no DBT e pressione enter para continuar...")        
     
@@ -393,7 +415,7 @@ if proceed: # Executar caso o comando cotenha a flag "cache" ou a resposta seja 
         
         linhas_condicao = check_trips(linhas_condicao, viagem_completa_reprocessada,
                                     "Viagem a ser paga após o reprocessamento")
-
+        
         linhas_condicao.to_excel('../data/treated/viagem_completa_classificada.xlsx', index = False)
 
         # Baixar e classificar viagens conformidade reprocessadas
@@ -409,10 +431,17 @@ if proceed: # Executar caso o comando cotenha a flag "cache" ou a resposta seja 
         
         
         linhas_condicao = check_trips(linhas_condicao, viagem_conformidade_reprocessada,
-                                    "Viagem inválida devido a conformidade mesmo após o reprocessamento")
-
+                                     "Viagem inválida devido a conformidade mesmo após o reprocessamento")
+        
         linhas_condicao.to_excel('../data/treated/viagem_conformidade_classificada.xlsx', index = False)
-
+                
+        viagens_gps_classificadas = pd.concat([linhas_condicao, demais_linhas], ignore_index=True)
+  
+  
+  
+  
+  
+  
         
 
     ### --- 7. Criar mapas em HTML para viagens da amostra não identificadas, mas com sinal de GPS --- ###

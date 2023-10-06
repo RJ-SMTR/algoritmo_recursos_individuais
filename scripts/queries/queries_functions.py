@@ -61,7 +61,7 @@ def query_viagem_conformidade(data, id_veiculo, reprocessed=False):
       AND id_veiculo IN ({id_veiculo})
       """
     if reprocessed:
-      table = "`rj-smtr-dev.projeto_subsidio_sppo_recursos_reprocessado.viagem_completa`"
+      table = "`rj-smtr-dev.projeto_subsidio_sppo_recursos_reprocessado.viagem_conformidade`"
       
     q = f"""
     SELECT

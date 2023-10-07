@@ -368,6 +368,7 @@ if proceed: # Executar caso o comando cotenha a flag "cache" ou a resposta seja 
     ### -- reprocessamento --###
     # Gerar arquivo csv para reprocessamento caso a viagem seja antes de 16/11/2022
     # e o valor da coluna flag_reprocessamento = 1
+    
         
     viagens_gps_classificadas['data'] = pd.to_datetime(viagens_gps_classificadas['data'])
     data_limite = datetime.strptime('2022-11-16', '%Y-%m-%d')

@@ -5,3 +5,5 @@ data/output/*
 git add -f data/output/.gitkeep
 data/treated/*
 git add -f data/treated/.gitkeep
+data/cache/*
+git add -f data/cache/.gitkeep

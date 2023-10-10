@@ -124,11 +124,11 @@ id_veiculo_query = ','.join([f"'{id}'" for id in id_veiculo_query])
 ### --- 3.1 Acessar dados das viagens completas --- ###
 
 if args.cache:
-    viagem_completa = pd.read_csv('../data/treated/viagem_completa.csv')   
+    viagem_completa = pd.read_csv('../data/cache/viagem_completa.csv')   
     
 else:
     viagem_completa = query_viagem_completa(data_query, id_veiculo_query, reprocessed=False)
-    viagem_completa.to_csv('../data/treated/viagem_completa.csv', index = False)
+    viagem_completa.to_csv('../data/cache/viagem_completa.csv', index = False)
 
 message = 'Acesso aos dados de viagens completas concluído com sucesso.'
 logging.debug(message)
@@ -174,11 +174,11 @@ id_veiculo_query = ','.join([f"'{id}'" for id in id_veiculo_query])
 
 # Acessar os dados
 if args.cache:
-    viagem_conformidade = pd.read_csv('../data/treated/viagem_conformidade.csv')  
+    viagem_conformidade = pd.read_csv('../data/cache/viagem_conformidade.csv')  
     
 else:
     viagem_conformidade = query_viagem_conformidade(data_query, id_veiculo_query, reprocessed=False)
-    viagem_conformidade.to_csv('../data/treated/viagem_conformidade.csv', index = False)
+    viagem_conformidade.to_csv('../data/cache/viagem_conformidade.csv', index = False)
 
 ### --- 4.2 Tratar dados das viagens conformidade --- ###
 viagem_conformidade = treat_trips(viagem_conformidade)
@@ -221,11 +221,11 @@ data_query = amostra_tratada['data'].drop_duplicates().tolist()
 data_query = ','.join([f"'{d}'" for d in data_query])
 
 if args.cache:
-    tipo_servico = pd.read_csv('../data/treated/tipo_servico.csv')   
+    tipo_servico = pd.read_csv('../data/cache/tipo_servico.csv')   
     
 else:
     tipo_servico = query_tipo_linha(data_query, servico_query, include_sentido_shape=True)
-    tipo_servico.to_csv('../data/treated/tipo_servico.csv', index = False)
+    tipo_servico.to_csv('../data/cache/tipo_servico.csv', index = False)
 
 
 tipo_servico['circular_dividida'] = np.where(
@@ -320,11 +320,11 @@ if proceed: # Executar caso o comando cotenha a flag "cache" ou a resposta seja 
         
     ### --- 6.2 Acessar os sinais de GPS --- ###
     if args.cache:
-        dados_gps = pd.read_csv('../data/treated/dados_gps.csv') 
+        dados_gps = pd.read_csv('../data/cache/dados_gps.csv') 
     
     else:
         dados_gps = query_gps(data_query, id_veiculo_query)
-        dados_gps.to_csv('../data/treated/dados_gps.csv', index = False)
+        dados_gps.to_csv('../data/cache/dados_gps.csv', index = False)
 
     message = 'Acesso aos sinais de GPS concluído com sucesso.'
     logging.debug(message)
@@ -406,11 +406,11 @@ if proceed: # Executar caso o comando cotenha a flag "cache" ou a resposta seja 
     
         # Baixar e classificar viagens completas reprocessadas
         if args.cache:
-            viagem_completa_reprocessada = pd.read_csv('../data/treated/viagem_completa_reprocessada.csv')   
+            viagem_completa_reprocessada = pd.read_csv('../data/cache/viagem_completa_reprocessada.csv')   
             
         else:
             viagem_completa_reprocessada = query_viagem_completa(data_query, id_veiculo_query, reprocessed=True)
-            viagem_completa_reprocessada.to_csv('../data/treated/viagem_completa_reprocessada.csv', index = False)
+            viagem_completa_reprocessada.to_csv('../data/cache/viagem_completa_reprocessada.csv', index = False)
             
         viagem_completa_reprocessada = treat_trips(viagem_completa_reprocessada)
         
@@ -423,11 +423,11 @@ if proceed: # Executar caso o comando cotenha a flag "cache" ou a resposta seja 
         # Baixar e classificar viagens conformidade reprocessadas
         
         if args.cache:
-            viagem_conformidade_reprocessada = pd.read_csv('../data/treated/viagem_conformidade_reprocessada.csv')   
+            viagem_conformidade_reprocessada = pd.read_csv('../data/cache/viagem_conformidade_reprocessada.csv')   
             
         else:
             viagem_conformidade_reprocessada = query_viagem_conformidade(data_query, id_veiculo_query, reprocessed=True)
-            viagem_conformidade_reprocessada.to_csv('../data/treated/viagem_conformidade_reprocessada.csv', index = False)
+            viagem_conformidade_reprocessada.to_csv('../data/cache/viagem_conformidade_reprocessada.csv', index = False)
             
         viagem_conformidade_reprocessada = treat_trips(viagem_conformidade_reprocessada)
         
@@ -453,11 +453,11 @@ if proceed: # Executar caso o comando cotenha a flag "cache" ou a resposta seja 
     
     ### --- 7.1 Acessar dados dos shapes --- ###
     if args.cache:
-        dados_shape = pd.read_csv('../data/treated/dados_gps_shape.csv')
+        dados_shape = pd.read_csv('../data/cache/dados_gps_shape.csv')
     
     else:
         dados_shape = query_shape(data_query, servico_query)
-        dados_shape.to_csv('../data/treated/dados_gps_shape.csv', index=False)
+        dados_shape.to_csv('../data/cache/dados_gps_shape.csv', index=False)
                
     dados_shape['servico'] = dados_shape['servico'].astype(str)
     

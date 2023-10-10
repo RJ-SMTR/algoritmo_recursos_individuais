@@ -351,6 +351,24 @@ if proceed: # Executar caso o comando cotenha a flag "cache" ou a resposta seja 
     # Juntar tabela com status nan e status não nan
     viagens_gps_classificadas = pd.concat([viagens_gps_classificadas_nan, viagens_gps_classificadas_not_nan], ignore_index=True)
 
+
+
+# Quando houver sinal de GPS para um serviço além do serviço da amostra, deixar apenas o
+# serviço diferente da amostra em serviço apurado (para realizar o reprocessamento de forma correta)
+        
+    def remover_valor(row): 
+        if pd.isna(row['servico_apurado']) or pd.isna(row['servico_amostra']):
+            return ""
+        elif str(row['servico_amostra']) != str(row['servico_apurado']):
+            valor_a_remover = str(row['servico_amostra']) 
+            return str(row['servico_apurado']).replace(valor_a_remover, '').replace(',', '').strip()
+        else:
+            return row['servico_apurado']
+
+    viagens_gps_classificadas['servico_apurado'] = viagens_gps_classificadas.apply(remover_valor, axis=1)
+
+
+
     viagens_gps_classificadas.to_excel('../data/treated/viagens_gps_classificadas.xlsx', index = False)
 
     
@@ -365,7 +383,7 @@ if proceed: # Executar caso o comando cotenha a flag "cache" ou a resposta seja 
     
     
     
-    ### -- reprocessamento --###
+    ### --- reprocessamento ---###
     # Gerar arquivo csv para reprocessamento caso a viagem seja antes de 16/11/2022
     # e o valor da coluna flag_reprocessamento = 1
     
@@ -389,6 +407,7 @@ if proceed: # Executar caso o comando cotenha a flag "cache" ou a resposta seja 
         print("As seguintes linhas atenderam à condição de reprocessamento do serviço:")
         
         print(linhas_condicao)
+                                  
                 
         linhas_condicao.to_csv('./../../queries-rj-smtr/data/reprocessar.csv', index = False)
         
@@ -440,6 +459,14 @@ if proceed: # Executar caso o comando cotenha a flag "cache" ou a resposta seja 
         viagens_gps_classificadas = pd.concat([linhas_condicao, demais_linhas], ignore_index=True)
   
   
+
+
+
+
+
+
+
+
 
 
 

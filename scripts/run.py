@@ -389,17 +389,18 @@ if proceed: # Executar caso o comando cotenha a flag "cache" ou a resposta seja 
         print("As seguintes linhas atenderam à condição de reprocessamento do serviço:")
         
         print(linhas_condicao)
-              
+                
+        linhas_condicao.to_csv('./../../queries-rj-smtr/data/reprocessar.csv', index = False)
+        
         # Limpar os campos que serão reprocessados:
         columns_to_na = [
         "status", "data_apurado", "id_veiculo_apurado", "servico_apurado",
         "sentido_apurado", "datetime_partida_apurado", "datetime_chegada_apurado"
         ]   
 
-# Substituindo todos os valores nas colunas selecionadas por NaN
+        # Substituindo todos os valores nas colunas selecionadas por NaN
         linhas_condicao.loc[:, columns_to_na] = np.nan
-                
-        linhas_condicao.to_csv('./../../queries-rj-smtr/data/reprocessar.csv', index = False)
+        
         
         input("Execução pausada. Execute o modelo no DBT e pressione enter para continuar...")        
     
@@ -439,10 +440,9 @@ if proceed: # Executar caso o comando cotenha a flag "cache" ou a resposta seja 
         viagens_gps_classificadas = pd.concat([linhas_condicao, demais_linhas], ignore_index=True)
   
   
-  
-  
-  
-  
+
+
+
         
 
     ### --- 7. Criar mapas em HTML para viagens da amostra não identificadas, mas com sinal de GPS --- ###

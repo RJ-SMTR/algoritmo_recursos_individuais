@@ -225,7 +225,7 @@ def check_gps(row, df_check):
     servico_apurado = ', '.join(unique_servicos)
 
     if not filtered_df.empty and np.isnan(row['status']):
-        if filtered_df.iloc[0]['servico'] == row['servico_amostra']:
+        if all(filtered_df['servico'] == row['servico_amostra']):
             return ("Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra", servico_apurado)
         else:
             return ("Sinal de GPS encontrado para o veículo operando em serviço diferente da amostra", servico_apurado)

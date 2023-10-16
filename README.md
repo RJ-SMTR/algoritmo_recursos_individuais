@@ -12,6 +12,7 @@ O algoritmo presente neste repositório tem como objetivo classificar as viagens
 
 O algoritmo recebe um arquivo contendo informações sobre as viagens e retorna um status, que pode ser:
 
+# revisar as classificações abaixo
 - Viagem duplicada na amostra
 - Viagem identificada e já paga
 - Viagem identificada e já paga para serviço diferente da amostra
@@ -57,7 +58,7 @@ A pasta `data/raw` deve conter um arquivo no formato xlsx contendo os dados das 
 <img src="./data/figures/tabela_input.png" alt="Descrição da imagem" width="800"/>
 
 Sobre os dados do arquivo:
-- a coluna id_veiculo deve conter o dígito antes do número do veículo;
+- a coluna id_veiculo não deve conter o dígito antes do número do veículo;
 - a coluna sentido deve existir, mesmo que esteja vazia; e
 - os dados do arquivo `arquivo_de_exemplo.xlsx` no diretório `data/raw` devem ser usados apenas para fins de testes do algoritmo. Os dados das viagens que constam no arquivo foram alterados manualmente e não devem ser considerados para análises sobre as respectivas viagens.
 

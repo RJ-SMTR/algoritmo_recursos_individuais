@@ -25,6 +25,7 @@ def automate_map(row, df_check, dados_shape, viagens_gps_to_map):
             hora_formatada = partida.strftime('%Hh%M')
             filename = f"./../data/output/maps/{veiculo} {partida.date()} {hora_formatada}.html"
             map.save(filename)
+            print(f"Gerando mapa: {veiculo} {partida.date()} {hora_formatada}")
 
     return "Os mapas foram gerados."  
 

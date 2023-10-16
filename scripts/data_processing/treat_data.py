@@ -1,8 +1,9 @@
 ## --- Treatment functions --- ###
 
 ### --- 1. Importar bibliotecas --- ###
-
+import logging
 import pandas as pd
+
 
 
 ### --- 2. Tratamento da amostra --- ###
@@ -19,7 +20,7 @@ def treat_sample(dados: pd.DataFrame) -> pd.DataFrame:
     
     Exemplos:
     >>> treat_sample(amostra)
-    """         
+    """        
     dados['servico'] = dados['servico'].astype(str)
     dados['data'] = dados['data'].astype(str)
     dados['id_veiculo'] = dados['id_veiculo'].astype(str)
@@ -27,6 +28,10 @@ def treat_sample(dados: pd.DataFrame) -> pd.DataFrame:
     dados['datetime_partida'] = pd.to_datetime(dados['data'] + ' ' + dados['hora_inicio'])
     dados['hora_fim'] = dados['hora_fim'].astype(str)
     dados['datetime_chegada'] = pd.to_datetime(dados['data'] + ' ' + dados['hora_fim'])
+    
+    message = 'Tratamento da amostra concluído com sucesso.'
+    logging.debug(message)
+    print(message)
     
     return dados
 
@@ -81,4 +86,28 @@ def treat_gps(dados: pd.DataFrame) -> pd.DataFrame:
     dados['timestamp_gps'] = pd.to_datetime(dados['timestamp_gps'])
     
     return dados
+
+
+   
+### --- 5. Tratamento dos filtros das queries --- ###
+
+def query_values(dados: pd.DataFrame, col_name: str) -> str:
+    """
+    Coleta os valores únicos de determinada coluna de um dataframe e retorna separado por vírgulas, 
+    para ser utilizado em filtros do SQL
+    """
+    # Verifica se col_name está presente no DataFrame
+    if col_name not in dados.columns:
+        raise ValueError(f'A coluna {col_name} não está presente no DataFrame.')
+
+    if col_name == 'data':
+        dados['data'] = pd.to_datetime(dados['data']).dt.strftime('%Y-%m-%d')
+        
+    unique_values = dados[col_name].drop_duplicates().tolist()
+    
+    # Formata os valores para uso em uma consulta SQL
+    formatted_values = ','.join([f"'{value}'" for value in unique_values])
+
+    return formatted_values
+
    

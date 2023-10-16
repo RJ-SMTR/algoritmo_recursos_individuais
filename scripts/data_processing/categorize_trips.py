@@ -1,5 +1,5 @@
 ### --- 1. Carregar bibliotecas --- ###
-
+import logging
 import pandas as pd
 import numpy as np
 
@@ -55,7 +55,11 @@ def remove_overlapping_trips(df: pd.DataFrame) -> pd.DataFrame:
                 elif df_processed.at[overlapping_index, 'datetime_partida'] < row['datetime_chegada'] and df_processed.at[overlapping_index, 'datetime_chegada'] > row['datetime_partida']:
                     if overlapping_index > index:
                         df_processed.at[overlapping_index, 'status'] = 'Viagem duplicada na amostra'
-                        
+    
+    message = 'Verificação de dados inconsistentes na amostra finalizada com sucesso.'
+    logging.debug(message)
+    print(message)
+               
     return df_processed
 
 

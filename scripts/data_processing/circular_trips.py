@@ -19,9 +19,7 @@ cache = "on" if args.cache else "off"
 
 def circular_trips(dados: pd.DataFrame, 
                    viagem_completa:pd.DataFrame, 
-                   viagem_conformidade:pd.DataFrame, 
-                   data: str, 
-                   servico: str) -> pd.DataFrame:
+                   viagem_conformidade:pd.DataFrame) -> pd.DataFrame:
     """
     Esta função executa todo o processo de identificação de meias viagens circulares e faz a sua classificação,
     """
@@ -36,7 +34,10 @@ def circular_trips(dados: pd.DataFrame,
     if args.cache:
         tipo_servico = pd.read_csv('../data/cache/tipo_servico.csv')   
     else:
-        tipo_servico = query_tipo_linha(data, servico, include_sentido_shape=True)
+        # tipo_servico = query_tipo_linha(data, servico, include_shape_direction=True)
+        
+        # código novo (inserir um DF aqui!!)
+        tipo_servico = query_planned_trips(dados, include_shape_direction = True)
         tipo_servico.to_csv('../data/cache/tipo_servico.csv', index = False)
 
     tipo_servico['circular_dividida'] = np.where(
@@ -60,7 +61,7 @@ def circular_trips(dados: pd.DataFrame,
     )
 
     dados.drop_duplicates()
-
+        
     # Caso não encontre o serviço em viagem planejada
     dados['status'] = np.where(
         dados['circular_dividida'].isna(),
@@ -69,8 +70,7 @@ def circular_trips(dados: pd.DataFrame,
     )
 
     dados = dados.drop(columns=['servico'])
-
-
+    
     ### --- 5.2 Identificar viagens circulares que ainda não foram classificadas --- ###  
 
     # Criar um df com as viagens que serão procuradas
@@ -79,6 +79,8 @@ def circular_trips(dados: pd.DataFrame,
         (dados['circular_dividida'] == 1) &
         pd.isna(dados['status'])
     ]
+    
+    print(df_circular_na)
 
     # Criando o DataFrame df_demais_casos
     df_demais_casos = dados.drop(df_circular_na.index)

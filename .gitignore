@@ -1,4 +1,6 @@
 env/
+__pycache__/
+**/__pycache__/
 scripts/log/*
 git add -f scripts/log/.gitkeep
 data/output/*

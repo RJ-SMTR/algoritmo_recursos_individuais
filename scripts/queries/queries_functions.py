@@ -134,41 +134,33 @@ def query_gps(df_conditions):
     
     return dados
   
-### --- 5. Consultar do Big Query os dados de viagem planejada --- ###   
   
-# query shape - viagem planejada
-def query_shape(data, servico):
-    q = f"""
-    SELECT
-    shape_id,
-    shape,
-    servico,
-    start_pt,
-    end_pt
-    FROM
-      `rj-smtr.projeto_subsidio_sppo.viagem_planejada`
-    WHERE
-      DATA IN ({data})
-      AND servico IN ({servico})
-    """   
-    dados = bd.read_sql(q, from_file=True)
-    if dados.empty:
-        print("Não foram encontrados dados do planejado.")
-    else:
-        pass    
-    return dados
 
 
+### --- 5. Consultar dados de viagens planejadas --- ###
+# Verificar o tipo de servico (circular ou ida e volta) e dados do trajeto 
 
-### --- 6. Verificar o tipo de servico (circular ou ida e volta) --- ###
-
-
-def query_tipo_linha(data, servico, include_sentido_shape=False):
-  # usar include_sentido_shape para não pegar dados de sentido_shape
+def query_planned_trips(data_servico_df, include_shape_direction=False, geometry_data=False):
     # Verificando se deve incluir a coluna 'sentido_shape' na query.
     select_clause = "data, servico, sentido"
-    if include_sentido_shape:
+    
+    if geometry_data:
+        select_clause = "data, servico, sentido, shape_id, shape, start_pt, end_pt"
+    
+    if include_shape_direction:
         select_clause += ", sentido_shape"
+    
+    conditions = []
+    
+    for index, row in data_servico_df.iterrows():
+        d = row['data']
+        s = row.get('servico', row.get('servico_amostra'))
+        condition = (
+            f"(DATA = '{d}' AND servico = '{s}')"
+        )
+        conditions.append(condition)
+    
+    sql_conditions = " OR ".join(conditions)
     
     # Construindo a query.
     q = f"""
@@ -176,14 +168,15 @@ def query_tipo_linha(data, servico, include_sentido_shape=False):
     {select_clause}
     FROM
       `rj-smtr.projeto_subsidio_sppo.viagem_planejada`
-    WHERE
-      DATA IN ({data})
-      AND servico IN ({servico})
-    """   
+    WHERE 
+      {sql_conditions}
+    """
+    
     # Executando a query e retornando os dados.
     dados = bd.read_sql(q, from_file=True)
     if dados.empty:
-        print("Não foram encontrados dados do planejados para o dia.")
+        print("Não foram encontradas viagens planejadas para o(s) dia(s).")
     else:
-        pass    
+        pass
+    
     return dados

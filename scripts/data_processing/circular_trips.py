@@ -23,7 +23,9 @@ def circular_trips(dados: pd.DataFrame,
     """
     Esta função executa todo o processo de identificação de meias viagens circulares e faz a sua classificação,
     """
-        
+    # este dataframe inalterado será retornado caso não sejam encontradas viagens circulares
+    dados_original = dados.copy()    
+    
     ### --- 6.1 Identificar se a linha é circular --- ###  
 
     message = 'Verificando se existem linhas circulares.'
@@ -102,3 +104,5 @@ def circular_trips(dados: pd.DataFrame,
 
     else:
         print("Não existem viagens circulares divididas em shapes de ida e volta.")
+        
+        return dados_original

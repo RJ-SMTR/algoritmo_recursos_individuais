@@ -240,7 +240,6 @@ if proceed: # Executar caso o comando contenha a flag "cache" ou a resposta seja
     # Acessar, o tratar e a classificar as viagens de acordo com os dados de GPS.
     viagens_gps_classificadas = gps_data(linhas_nan, viagens_conformidade_classificadas)
     
-    
     ## --- 7.1 Verificar se houveram sinais de GPS no entorno dos pontos inicial e final --- ###
 
     status_check = 'Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra'
@@ -263,31 +262,40 @@ if proceed: # Executar caso o comando contenha a flag "cache" ou a resposta seja
     filtro_gps = viagens_com_gps[['id_veiculo_amostra','data']].drop_duplicates(subset=['id_veiculo_amostra', 'data'])  
     dados_gps = pd.read_csv('../data/cache/dados_gps.csv')
     dados_gps = treat_gps(dados_gps)
+    
     dados_gps['data'] = dados_gps['timestamp_gps'].dt.date.astype(str)
+    dados_gps['id_veiculo'] = dados_gps['id_veiculo'].astype(str)
+    filtro_gps['data'] = filtro_gps['data'].astype(str)
+    filtro_gps['id_veiculo_amostra'] = filtro_gps['id_veiculo_amostra'].astype(str)
 
     dados_gps = dados_gps.merge(filtro_gps, 
                                 left_on=['data','id_veiculo'], 
                                 right_on=['data','id_veiculo_amostra'], 
                                 how='inner')
-        
+                
+            
     # Acessar e tratar dados do shape/viagem_planejada
     filtro_shape = viagens_com_gps[['servico_amostra','data']].drop_duplicates(subset=['servico_amostra', 
                                                                                        'data']) 
+    
+    filtro_shape.to_excel('./../data/treated/dados_shape.xlsx')
+    
 
     dados_shape['data'] = dados_shape['data'].astype(str)
     dados_shape['servico'] = dados_shape['servico'].astype(str)
     filtro_shape['data'] = filtro_shape['data'].astype(str)
     filtro_shape['servico_amostra'] = filtro_shape['servico_amostra'].astype(str)
-    
+        
     # juntar dados de GPS com os respectivos ponto final/inicial
     dados_shape = dados_shape.merge(filtro_shape, 
                                 left_on=['data','servico'], 
                                 right_on=['data','servico_amostra'], 
                                 how='inner')
-    
+
     # Verificar pontos nos raios de 500m inicial e final   
-    merged_data = pd.merge(dados_shape, dados_gps, on=['data', 'servico'], how='inner')
-    
+    merged_data = pd.merge(dados_shape, 
+                           dados_gps, on=['data', 'servico'], how='inner')  
+        
     # converter formato dos pontos
     def point_to_tuple(point_string):
         # Extrair os valores numéricos
@@ -305,28 +313,29 @@ if proceed: # Executar caso o comando contenha a flag "cache" ou a resposta seja
         return 1 if distance <= radius else 0
 
     # Criar colunas que indicam se o sinal de GPS está dentro do raio de 500m
+    
     merged_data['check_start_pt'] = merged_data.apply(lambda row: is_within_radius(row['start_pt'], row['posicao_veiculo_geo'], 500), axis=1)
     merged_data['check_end_pt'] = merged_data.apply(lambda row: is_within_radius(row['end_pt'], row['posicao_veiculo_geo'], 500), axis=1)
 
-    # Classificar o status das viagens
-    # O código abaixo coleta os sinais de GPS dos primeiros e dos últimos 5 minutos do intervalo 
-    # da viagem informada pelo recurso. 
-
-    # Partida
-    partida = []
-
-    for index, row in viagens_com_gps.iterrows():
-        mask = (merged_data['id_veiculo'] == row['id_veiculo_amostra']) & (merged_data['timestamp_gps'] < (row['datetime_partida_amostra'] + pd.Timedelta(minutes=5)))
-        filtered_data = merged_data[mask]
-        partida.append(filtered_data)
-
-    df_partida = pd.concat(partida)
     
-    df_partida = df_partida.groupby('id_veiculo').agg({
-        'check_start_pt': 'sum',
-        'check_end_pt': 'sum',
-        'timestamp_gps': 'mean'
-    }).reset_index()
+    # Partida
+    partida = []  
+    
+    for index, row in viagens_com_gps.iterrows():
+        mask = (merged_data['id_veiculo'] == row['id_veiculo_amostra']) & (merged_data['timestamp_gps'] > row['datetime_partida_amostra']) & (merged_data['timestamp_gps'] < (row['datetime_partida_amostra'] + pd.Timedelta(minutes=5)))
+        filtered_data = merged_data[mask]
+        
+        # Agregar dados
+        aggregated_data = filtered_data.groupby('id_veiculo').agg({
+            'check_start_pt': 'sum',
+            'check_end_pt': 'sum',
+            'timestamp_gps': 'mean'
+        }).reset_index()
+        
+        partida.append(aggregated_data)
+
+    # Concatenar ao final do loop
+    df_partida = pd.concat(partida) 
     
     df_partida = df_partida.rename(columns={
     'check_start_pt': 'check_start_pt_partida',
@@ -334,11 +343,12 @@ if proceed: # Executar caso o comando contenha a flag "cache" ou a resposta seja
     'timestamp_gps': 'timestamp_gps_partida'
     })
 
+
     # Chegada 
     chegada = []
 
     for index, row in viagens_com_gps.iterrows():
-        mask = (merged_data['id_veiculo'] == row['id_veiculo_amostra']) & (merged_data['timestamp_gps'] > (row['datetime_chegada_amostra'] - pd.Timedelta(minutes=5)))
+        mask = (merged_data['id_veiculo'] == row['id_veiculo_amostra']) & (merged_data['timestamp_gps'] < row['datetime_chegada_amostra']) & (merged_data['timestamp_gps'] > (row['datetime_chegada_amostra'] - pd.Timedelta(minutes=5)))        
         filtered_data = merged_data[mask]
         chegada.append(filtered_data)
 
@@ -359,69 +369,71 @@ if proceed: # Executar caso o comando contenha a flag "cache" ou a resposta seja
         
     df_chegada['data'] = df_chegada['timestamp_gps_chegada'].dt.date.astype(str)
     df_partida['data'] = df_partida['timestamp_gps_partida'].dt.date.astype(str)
-    
-    # Caso os sinais de GPS nos primeiros e nos últimos 5 minutos da viagem informada no recurso   
-    # não tenham passado no raio de 500m do ponto inicial e final, será atribuido um novo status.   
+    viagens_com_gps['data'] = viagens_com_gps['data'].astype(str) 
     
     merged_partida = pd.merge(viagens_com_gps, df_partida,
                              left_on=['data','id_veiculo_amostra'], 
                              right_on=['data','id_veiculo'],                             
-                             how='inner')
+                             how='left')
+      
+    merged_partida.to_excel('./../data/treated/merged_partida.xlsx')
 
-    # Filtrar linhas baseado no timestamp_gps_partida
-    filtered_partida = merged_partida[(merged_partida['timestamp_gps_partida'] >= merged_partida['datetime_partida_amostra']) & 
-                                    (merged_partida['timestamp_gps_partida'] <= merged_partida['datetime_chegada_amostra'])]
+    merged_chegada = pd.merge(merged_partida, df_chegada, 
+                            left_on=['data','id_veiculo_amostra'], 
+                            right_on=['data','id_veiculo'],                             
+                            how='left')
+
+    # Remover dados que não são das viagens
+    # Crie máscaras booleanas com base nas condições
+    mask_partida = (merged_chegada['timestamp_gps_partida'] >= merged_chegada['datetime_partida_amostra']) & \
+                (merged_chegada['timestamp_gps_partida'] <= merged_chegada['datetime_chegada_amostra'])
+
+    mask_chegada = (merged_chegada['timestamp_gps_chegada'] >= merged_chegada['datetime_partida_amostra']) & \
+                    (merged_chegada['timestamp_gps_chegada'] <= merged_chegada['datetime_chegada_amostra'])
+
+    # Aplique as máscaras para definir valores vazios (NA) onde as condições não são atendidas
+    columns_partida = ['id_veiculo_x', 'check_start_pt_partida', 'check_end_pt_partida', 'timestamp_gps_partida']
+    columns_chegada = ['id_veiculo_y', 'check_start_pt_chegada', 'check_end_pt_chegada', 'timestamp_gps_chegada']
+
+    merged_chegada.loc[~mask_partida, columns_partida] = np.nan
+    merged_chegada.loc[~mask_chegada, columns_chegada] = np.nan
+
     
-    # Merge o resultado anterior com df_chegada
-    merged_chegada = pd.merge(filtered_partida, df_chegada, 
-                             left_on=['data','id_veiculo_amostra'], 
-                             right_on=['data','id_veiculo'],                             
-                             how='inner')
-
-    # Filtrar linhas baseado no timestamp_gps_chegada
-    final_result = merged_chegada[(merged_chegada['timestamp_gps_chegada'] >= merged_chegada['datetime_partida_amostra']) & 
-                                (merged_chegada['timestamp_gps_chegada'] <= merged_chegada['datetime_chegada_amostra'])]
-
+    
     # checa se passou a 500m do ponto inicial e final
     condition = (
-    (final_result['check_start_pt_partida'] == 0) |
-    (final_result['check_start_pt_chegada'] == 0) |
-    (final_result['check_end_pt_partida'] == 0) |
-    (final_result['check_end_pt_chegada'] == 0)
+    ((merged_chegada['check_start_pt_partida'] == 0) | merged_chegada['check_start_pt_partida'].isna()) |
+    ((merged_chegada['check_start_pt_chegada'] == 0) | merged_chegada['check_start_pt_chegada'].isna()) |
+    ((merged_chegada['check_end_pt_partida'] == 0) | merged_chegada['check_end_pt_partida'].isna()) |
+    ((merged_chegada['check_end_pt_chegada'] == 0) | merged_chegada['check_end_pt_chegada'].isna())
     )
 
-# Atualizar a coluna 'status' com base na condição
-    final_result.loc[condition, 'status'] = "Sinal de GPS encontrado, mas veículo não passou no raio de 500m do ponto de partida/final do trajeto"
+    # Atualizar a coluna 'status' com base na condição
+    merged_chegada.loc[condition, 'status'] = "O veículo não passou no raio de 500m do ponto de partida/final do trajeto"
     
-    start_idx = final_result.columns.get_loc('id_veiculo_x')
+    start_idx = merged_chegada.columns.get_loc('id_veiculo_x')
     # Exclua todas as colunas a partir desse índice
-    final_result.drop(final_result.columns[start_idx:], axis=1, inplace=True)
+    merged_chegada.drop(merged_chegada.columns[start_idx:], axis=1, inplace=True)
     
-    viagens_gps_classificadas = pd.concat([viagens_ja_classificadas, final_result], ignore_index=True)
-       
+    viagens_gps_classificadas = pd.concat([viagens_ja_classificadas, merged_chegada], ignore_index=True)
+    print(viagens_gps_classificadas)
     viagens_gps_classificadas.to_excel('./../data/treated/gps_classificado_inicio_fim.xlsx')
         
+      
    
-    
     ### --- 8. Criar mapas em HTML  --- ###
     # Esta etapa cria mapas em HTML para as viagens que tiveram sinais de GPS encontrados, mas não foram
     # classificadas nas etapas anteriores.
     
-    # status para criar mapa de GPS
-    status_check = ['Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra',
-                    'Sinal de GPS encontrado, mas veículo não passou no raio de 500m do ponto de partida/final do trajeto']
-
-    viagens_gps_to_map = viagens_gps_classificadas[viagens_gps_classificadas['status'].isin(status_check)]
-    
     
     ### --- 8.1 Acessar dados dos shapes --- ###
     
-    dados_shape.to_csv('../data/cache/dados_gps_shape.csv', index=False)        
-    dados_shape['servico'] = dados_shape['servico'].astype(str)
+    # dados_shape.to_csv('../data/cache/dados_gps_shape.csv', index=False)        
+    # dados_shape['servico'] = dados_shape['servico'].astype(str)
     
-    message = 'Shapes acessados com sucesso.'
-    logging.debug(message)
-    print(message)
+    # message = 'Shapes acessados com sucesso.'
+    # logging.debug(message)
+    # print(message)
     
     # dados_gps = pd.read_csv('../data/cache/dados_gps.csv')
     # dados_gps = treat_gps(dados_gps)
@@ -444,8 +456,7 @@ if proceed: # Executar caso o comando contenha a flag "cache" ou a resposta seja
     ### --- 9. Ajustes finais --- ###
     
     # remover as colunas flag_reprocessamento e circular_dividida
-    viagens_gps_classificadas = viagens_gps_classificadas.drop(['circular_dividida',
-                                                                'flag_reprocessamento'], axis=1)
+    viagens_gps_classificadas = viagens_gps_classificadas.drop(['flag_reprocessamento'], axis=1)
     
     ### --- 9.1 Adicionar coluna com a versão do modelo --- ###
     viagens_gps_classificadas['versao_modelo'] = modelo_versao    
@@ -470,6 +481,8 @@ if proceed: # Executar caso o comando contenha a flag "cache" ou a resposta seja
     message = 'Relatório da execução do algoritmo:'
     logging.debug(message)
     print(message)
+    
+    # Checar número de linhas da amostra inserida vs output
     
     # Criar um dataframe para armazenar os resultados
     tabela = pd.DataFrame(index=['Parecer definido','Parecer indefinido'], columns=['Contagem', 'Porcentagem'])

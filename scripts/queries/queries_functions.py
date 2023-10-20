@@ -2,7 +2,7 @@
 ### --- 1. Carregar bibliotecas --- ###
 import basedosdados as bd
 import pandas as pd
-
+from utils import *
 
 
 ### --- 2. Consultar do Big Query as viagens completas --- ###
@@ -38,8 +38,9 @@ def query_viagem_completa(data, id_veiculo, reprocessed=False):
     dados = bd.read_sql(q, from_file=True)        
     
     if dados.empty:
-        print("Não foram encontradas viagens completas.")
+        log_info("Não foram encontradas viagens na tabela de viagem completa.")
     else:
+        log_info("Execução de query de viagens completas: sucesso.")
         pass
   
     return dados
@@ -77,8 +78,9 @@ def query_viagem_conformidade(data, id_veiculo, reprocessed=False):
     dados = bd.read_sql(q, from_file=True)      
     
     if dados.empty:
-        print("Não foram encontradas viagens em conformidade.")
+        log_info("Não foram encontradas viagens na tabela de viagem conformidade.")
     else:
+        log_info("Execução de query de viagens conformidade: sucesso.")
         pass
     return dados
 
@@ -128,8 +130,9 @@ def query_gps(df_conditions):
     dados = dados.sort_values(by='timestamp_gps')
     
     if dados.empty:
-        print("Não foram encontrados dados de GPS.")
+        log_info("Não foram encontrados dados de GPS.")
     else:
+        log_info("Execução de query de posições de GPS: sucesso.")
         pass
     
     return dados
@@ -175,8 +178,9 @@ def query_planned_trips(data_servico_df, include_shape_direction=False, geometry
     # Executando a query e retornando os dados.
     dados = bd.read_sql(q, from_file=True)
     if dados.empty:
-        print("Não foram encontradas viagens planejadas para o(s) dia(s).")
+        log_info("Não foram encontradas viagens planejadas para as datas.")
     else:
+        log_info("Execução de query de viagens planejada: sucesso.")
         pass
     
     return dados

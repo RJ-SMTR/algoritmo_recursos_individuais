@@ -1,7 +1,8 @@
 ### --- 1. Carregar bibliotecas --- ###
-import logging
 import pandas as pd
 import numpy as np
+
+from utils import *
 
 
 ### --- 2. Função de verificação de viagens sobrepostas --- ###
@@ -56,9 +57,7 @@ def remove_overlapping_trips(df: pd.DataFrame) -> pd.DataFrame:
                     if overlapping_index > index:
                         df_processed.at[overlapping_index, 'status'] = 'Viagem duplicada na amostra'
     
-    message = 'Verificação de dados inconsistentes na amostra finalizada com sucesso.'
-    logging.debug(message)
-    print(message)
+    log_info('Verificação de dados inconsistentes na amostra finalizada com sucesso.')
                
     return df_processed
 
@@ -118,17 +117,11 @@ def check_trips(amostra: pd.DataFrame, query_trip_table: pd.DataFrame, status: s
                                   on='tmp_key', 
                                   suffixes=('_amostra', '_apurado')) 
     
-    
     # Definir o intervalo do join:
     # caso a viagem seja muito curta e dure menos de 10 minutos, o join será feito com uma margem de 5 minutos, e não 10 minutos
     condition = (tabela_comparativa['datetime_chegada_amostra'] - tabela_comparativa['datetime_partida_amostra'] < pd.Timedelta(minutes=10))
     tabela_comparativa['intervalo'] = np.where(condition, 5, 10)
     
-    
-    # Filtrar os resultados com base no critério do intervalo de tempo
-    # condition = (tabela_comparativa['datetime_partida_apurado'] >= (tabela_comparativa['datetime_partida_amostra'] - pd.Timedelta(minutes=intervalo))) & \
-    #             (tabela_comparativa['datetime_partida_apurado'] <= (tabela_comparativa['datetime_partida_amostra'] + pd.Timedelta(minutes=intervalo)))
-        
     condition = (tabela_comparativa['datetime_partida_apurado'] >= 
                 (tabela_comparativa['datetime_partida_amostra'] - 
                 pd.to_timedelta(tabela_comparativa['intervalo'], unit="m"))) & \

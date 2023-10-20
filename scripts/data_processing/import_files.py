@@ -1,7 +1,6 @@
-import logging
 import os
 import pandas as pd
-
+from utils import *
 
 def import_sample() -> pd.DataFrame:
 
@@ -11,13 +10,10 @@ def import_sample() -> pd.DataFrame:
     if len(files) == 1:
         file_path = os.path.join(dir_path, files[0])
         amostra = pd.read_excel(file_path)
-        message = 'Importação da amostra realizada com sucesso.'
-        logging.debug(message)
-        print(message)
+        log_info('Importação da amostra realizada com sucesso.')
+
 
     else:
-        message = 'Nenhum arquivo encontrado na pasta raw ou existe mais de um arquivo no formato xlsx.'
-        logging.debug(message)
-        print(message)
+        log_info('Nenhum arquivo encontrado ou existe mais de um arquivo no formato xlsx dentro da pasta "data/raw".')
     
     return amostra

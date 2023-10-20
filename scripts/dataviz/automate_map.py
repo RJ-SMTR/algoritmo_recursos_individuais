@@ -1,14 +1,11 @@
 from graphs import *
-import logging
+from utils import *
 
 def automate_map(viagens_gps_classificadas, dados_shape, dados_gps):
     """
     Esta função gera mapas no formato HTML para as viagens não identificadas, mas que existe sinal de GPS com o serviço correto.
     """   
-    
-    message = 'Iniciando a etapa de geração dos mapas em HTML.'
-    logging.debug(message)
-    print(message)   
+    log_info('Iniciando a etapa de geração dos mapas em HTML.')  
     
     condition = (
     (viagens_gps_classificadas['status'] == "Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra") | 
@@ -42,13 +39,9 @@ def automate_map(viagens_gps_classificadas, dados_shape, dados_gps):
                 filename = f"./../data/output/maps/{veiculo_label} {partida_label} {hora_label}.html"
                 
                 map_obj.save(filename)
-                print(f"Gerando mapa: {veiculo_label} {partida_label} {hora_label}")
-                
-        message = 'Mapas em HTML gerados com sucesso e disponíveis no diretório data/output/maps.'
-        logging.debug(message)
-        print(message)
+                log_info(f"Gerando mapa: {veiculo_label} {partida_label} {hora_label}")  
+        
+        log_info('Mapas em HTML gerados com sucesso e disponíveis no diretório data/output/maps.')        
                     
     else:
-        message = 'Não existem viagens classificadas nos status em que os mapas precisam ser gerados.'
-        logging.debug(message)
-        print(message) 
+        log_info('Não existem viagens classificadas nos status em que os mapas precisam ser gerados.')    

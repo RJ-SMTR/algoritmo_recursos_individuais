@@ -1,9 +1,9 @@
 
 import argparse
-import logging
 import numpy as np
 import pandas as pd
 
+from utils import *
 from categorize_trips import *
 from queries_functions import *
 
@@ -13,7 +13,6 @@ parser = argparse.ArgumentParser(description="Execute o script run.py com opçõ
 parser.add_argument('--cache', action='store_true', help="Ative o cache")
 args = parser.parse_args()
 cache = "on" if args.cache else "off"
-
 
 
 
@@ -28,9 +27,7 @@ def circular_trips(dados: pd.DataFrame,
     
     ### --- 6.1 Identificar se a linha é circular --- ###  
 
-    message = 'Verificando se existem linhas circulares.'
-    logging.debug(message)
-    print(message)
+    log_info('Verificando se existem linhas circulares.')
 
     # verifica os serviços e as datas presentes na amostra
     if args.cache:
@@ -90,8 +87,7 @@ def circular_trips(dados: pd.DataFrame,
 
     if not df_circular_na.empty:
         # Código a ser executado caso df_circular não esteja vazio
-        print("Possíveis meias viagens circulares que constam na amostra:")
-        print(df_circular_na)
+        log_info('Foram identificadas viagens circulares divididas em shapes de ida e volta e podem ser visualizadas em "/data/treated/viagem_conformidade_classificada_circular.xlsx"')
         
         # Esta função classifica as meia viagens circulares que não foram identificadas nos passos anteriores
         df_circular_na = check_circular_trip(df_circular_na, viagem_completa, viagem_conformidade)
@@ -103,6 +99,6 @@ def circular_trips(dados: pd.DataFrame,
         return dados    
 
     else:
-        print("Não existem viagens circulares divididas em shapes de ida e volta.")
+        log_info('Não existem viagens circulares divididas em shapes de ida e volta.')
         
         return dados_original

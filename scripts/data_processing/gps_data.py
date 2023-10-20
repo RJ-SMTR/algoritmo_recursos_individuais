@@ -1,7 +1,7 @@
 import argparse
-import logging
 import pandas as pd
 
+from utils import *
 from queries_functions import *
 from categorize_trips import *
 from treat_data import *
@@ -29,17 +29,11 @@ def gps_data(viagens_sem_status: pd.DataFrame, todas_as_viagens: pd.DataFrame) -
         dados_gps = query_gps(viagens_sem_status)
         dados_gps.to_csv('../data/cache/dados_gps.csv', index = False)
 
-    message = 'Acesso aos sinais de GPS concluído com sucesso.'
-    logging.debug(message)
-    print(message)
-    
+    log_info('Acesso aos sinais de GPS concluído com sucesso.')
     
     ### --- 7.2 Tratar os sinais de GPS --- ###
     dados_gps = treat_gps(dados_gps)
-    
-    message = 'Tratamento de dados de GPS concluído com sucesso.'
-    logging.debug(message)
-    print(message)
+    log_info('Tratamento de dados de GPS concluído com sucesso.')
 
 
     ### --- 7.3 Comparar amostra com os sinais de GPS --- ###

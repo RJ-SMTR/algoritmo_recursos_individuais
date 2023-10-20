@@ -1,11 +1,21 @@
 from graphs import *
 from utils import *
+from treat_data import *
 
-def automate_map(viagens_gps_classificadas, dados_shape, dados_gps):
+def automate_map(viagens_gps_classificadas):
     """
     Esta função gera mapas no formato HTML para as viagens não identificadas, mas que existe sinal de GPS com o serviço correto.
     """   
     log_info('Iniciando a etapa de geração dos mapas em HTML.')  
+    
+    log_info('Acessando dados de GPS e do trajeto.') 
+    dados_shape = pd.read_csv('../data/cache/dados_gps_shape.csv')
+    dados_shape['servico'] = dados_shape['servico'].astype(str)   
+
+    dados_gps = pd.read_csv('../data/cache/dados_gps.csv')
+    dados_gps = treat_gps(dados_gps)
+      
+    
     
     condition = (
     (viagens_gps_classificadas['status'] == "Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra") | 

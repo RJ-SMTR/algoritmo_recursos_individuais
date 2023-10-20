@@ -28,7 +28,7 @@ def gps_data(todas_as_viagens: pd.DataFrame) -> pd.DataFrame:
 
     proceed = False
     
-    # Estimar custos da query e perguntar se deseja continuar
+    # Confirmar se a query dos dados de GPS deve ser feita
     if not args.cache:
         response = ""
         while response not in ['y', 'n']:

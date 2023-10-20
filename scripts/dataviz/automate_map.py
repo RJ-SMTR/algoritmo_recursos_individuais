@@ -1,32 +1,54 @@
 from graphs import *
+import logging
 
-def automate_map(row, df_check, dados_shape, viagens_gps_to_map):
+def automate_map(viagens_gps_classificadas, dados_shape, dados_gps):
     """
-    Automatiza e salva em HTML os mapas das viagens.
+    Esta função gera mapas no formato HTML para as viagens não identificadas, mas que existe sinal de GPS com o serviço correto.
+    """   
     
-    """         
-   
-    filtered_df = df_check[
-        (df_check['id_veiculo'] == row['id_veiculo_amostra']) &
-        (df_check['timestamp_gps'] >= row['datetime_partida_amostra']) &
-        (df_check['timestamp_gps'] <= row['datetime_chegada_amostra'])
-    ]
+    message = 'Iniciando a etapa de geração dos mapas em HTML.'
+    logging.debug(message)
+    print(message)   
+    
+    condition = (
+    (viagens_gps_classificadas['status'] == "Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra") | 
+    (viagens_gps_classificadas['status'] == "O veículo não passou no raio de 500m do ponto de partida/final do trajeto")
+    )
 
-    unique_veiculos = filtered_df['id_veiculo'].unique()
-
-    if not filtered_df.empty and row['status'] == 'Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra':
-        for veiculo in unique_veiculos:
-            gps_mapa = filtered_df[filtered_df['id_veiculo'] == veiculo]
-            servico_do_veiculo = gps_mapa['servico'].iloc[0]
-            shape_mapa = dados_shape[dados_shape['servico'] == servico_do_veiculo]
-
-            map = create_trip_map(gps_mapa, shape_mapa)
-            partida = viagens_gps_to_map[viagens_gps_to_map['id_veiculo_amostra'] == veiculo]['datetime_partida_amostra'].iloc[0]
-            hora_formatada = partida.strftime('%Hh%M')
-            filename = f"./../data/output/maps/{veiculo} {partida.date()} {hora_formatada}.html"
-            map.save(filename)
-            print(f"Gerando mapa: {veiculo} {partida.date()} {hora_formatada}")
-
-    return "Os mapas foram gerados."  
-
-          
+    if condition.any():
+        for _, row in viagens_gps_classificadas.iterrows():
+            if (row['status'] == "Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra") or (row['status'] == "O veículo não passou no raio de 500m do ponto de partida/final do trajeto"):
+                
+                # Filtrar dados_gps
+                gps_map = dados_gps[
+                    (dados_gps['id_veiculo'] == row['id_veiculo_amostra']) &
+                    (dados_gps['timestamp_gps'] >= row['datetime_partida_amostra']) &
+                    (dados_gps['timestamp_gps'] <= row['datetime_chegada_amostra'])
+                ]
+                
+                # Filtrar dados_shape
+                shape_map = dados_shape[
+                    (dados_shape['data'] == row['data']) &
+                    (dados_shape['servico'] == row['servico_amostra'])
+                ]
+                
+                # Criar mapa
+                map_obj = create_trip_map(gps_map, shape_map)
+                
+                # Salvar arquivo
+                veiculo_label = row['id_veiculo_amostra']
+                partida_label = row['datetime_partida_amostra'].date()
+                hora_label = row['datetime_partida_amostra'].strftime('%Hh%M')
+                filename = f"./../data/output/maps/{veiculo_label} {partida_label} {hora_label}.html"
+                
+                map_obj.save(filename)
+                print(f"Gerando mapa: {veiculo_label} {partida_label} {hora_label}")
+                
+        message = 'Mapas em HTML gerados com sucesso e disponíveis no diretório data/output/maps.'
+        logging.debug(message)
+        print(message)
+                    
+    else:
+        message = 'Não existem viagens classificadas nos status em que os mapas precisam ser gerados.'
+        logging.debug(message)
+        print(message) 

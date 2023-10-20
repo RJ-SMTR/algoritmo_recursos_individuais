@@ -316,8 +316,8 @@ if proceed: # Executar caso o comando contenha a flag "cache" ou a resposta seja
     
     merged_data['check_start_pt'] = merged_data.apply(lambda row: is_within_radius(row['start_pt'], row['posicao_veiculo_geo'], 500), axis=1)
     merged_data['check_end_pt'] = merged_data.apply(lambda row: is_within_radius(row['end_pt'], row['posicao_veiculo_geo'], 500), axis=1)
-
-    
+  
+      
     # Partida
     partida = []  
     
@@ -376,7 +376,6 @@ if proceed: # Executar caso o comando contenha a flag "cache" ou a resposta seja
                              right_on=['data','id_veiculo'],                             
                              how='left')
       
-    merged_partida.to_excel('./../data/treated/merged_partida.xlsx')
 
     merged_chegada = pd.merge(merged_partida, df_chegada, 
                             left_on=['data','id_veiculo_amostra'], 
@@ -419,7 +418,9 @@ if proceed: # Executar caso o comando contenha a flag "cache" ou a resposta seja
     print(viagens_gps_classificadas)
     viagens_gps_classificadas.to_excel('./../data/treated/gps_classificado_inicio_fim.xlsx')
         
-      
+    # merged_data.to_excel('./../data/treated/merged_data.xlsx')
+   
+   
    
     ### --- 8. Criar mapas em HTML  --- ###
     # Esta etapa cria mapas em HTML para as viagens que tiveram sinais de GPS encontrados, mas não foram
@@ -428,30 +429,21 @@ if proceed: # Executar caso o comando contenha a flag "cache" ou a resposta seja
     
     ### --- 8.1 Acessar dados dos shapes --- ###
     
-    # dados_shape.to_csv('../data/cache/dados_gps_shape.csv', index=False)        
-    # dados_shape['servico'] = dados_shape['servico'].astype(str)
+    dados_shape.to_csv('../data/cache/dados_gps_shape.csv', index=False)        
+    dados_shape['servico'] = dados_shape['servico'].astype(str)
     
-    # message = 'Shapes acessados com sucesso.'
-    # logging.debug(message)
-    # print(message)
+    message = 'Shapes acessados com sucesso.'
+    logging.debug(message)
+    print(message)
     
-    # dados_gps = pd.read_csv('../data/cache/dados_gps.csv')
-    # dados_gps = treat_gps(dados_gps)
+    dados_gps = pd.read_csv('../data/cache/dados_gps.csv')
+    dados_gps = treat_gps(dados_gps)
             
-            
-            
+    
     ### --- 8.2 Gerar mapas em HTML --- ###
-    # message = 'Iniciando a geração dos mapas em HTML.'
-    # logging.debug(message)
-    # print(message)
        
-    # results = viagens_gps_to_map.apply(lambda row: automate_map(row, dados_gps, dados_shape, viagens_gps_to_map), axis=1)
-
-    # message = 'Mapas em HTML gerados com sucesso e disponíveis no diretório data/output/maps.'
-    # logging.debug(message)
-    # print(message)
-    
-    
+    automate_map(viagens_gps_classificadas, dados_shape, dados_gps)
+  
     
     ### --- 9. Ajustes finais --- ###
     

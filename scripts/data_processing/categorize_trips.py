@@ -500,3 +500,35 @@ def check_start_end_gps(viagens_gps_classificadas: pd.DataFrame) -> pd.DataFrame
     log_info('Verificação de proximidade dos sinais de GPS com ponto inicial e final finalizada.')
     
     return viagens_gps_classificadas
+
+
+### --- 7. Função que classifica os status de forma mais simples --- ###
+
+
+def simplified_status(dataframe: pd.DataFrame) -> pd.DataFrame:
+    dataframe.rename(columns={'status': 'observacao'}, inplace=True)
+    
+    # Criar a nova coluna "observacoes"
+    status_mapping = {
+        'Viagem identificada e já paga': ['Viagem identificada e já paga', 'Viagem identificada e já paga para serviço diferente da amostra'],
+        'Viagem indeferida': ['Viagem indeferida - Não atingiu % de GPS ou trajeto correto após o reprocessamento',
+                              'Viagem indeferida - Não atingiu % de GPS ou trajeto correto para serviço diferente da amostra',
+                              'Viagem indeferida - Não atingiu % de GPS ou trajeto correto',
+                              'O veículo não passou no raio de 500m do ponto de partida/final do trajeto',
+                              'Sinal de GPS encontrado para o veículo operando em serviço diferente da amostra',
+                              'Sinal de GPS não encontrado para o veículo no horário da viagem'],
+        'Viagem não classificada pelo algoritmo': ['Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra']
+    }
+
+    # Criar a coluna status nova (com categorias simplificadas)
+    dataframe['status'] = dataframe['observacao'].map({value: key for key, values in status_mapping.items() for value in values})
+    
+    # Reordenar as colunas da tabela
+    cols = list(dataframe.columns)
+    cols.remove('status')
+    cols.remove('observacao')
+    cols.insert(cols.index('datetime_chegada_amostra') + 1, 'status')
+    cols.insert(cols.index('status') + 1, 'observacao')
+    dataframe = dataframe[cols]
+    
+    return dataframe

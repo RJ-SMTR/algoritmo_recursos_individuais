@@ -36,11 +36,19 @@ def generate_report(viagens_gps_classificadas: pd.DataFrame, amostra: pd.DataFra
 
     # Contar as ocorrências de cada caso
     total_rows = len(viagens_gps_classificadas)
-    tabela.loc['Parecer indefinido', 'Contagem'] = sum(viagens_gps_classificadas['status'] == 'Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra')
-    tabela.loc['Parecer definido', 'Contagem'] = total_rows - tabela.loc['Parecer indefinido', 'Contagem']
+
+    # Contar o número de ocorrências de ambas as condições
+    condicao = (viagens_gps_classificadas['status'] == 'Viagem não classificada pelo algoritmo')
+    contagem_total = sum(condicao)
+
+    # Atualizar a contagem na linha "Parecer indefinido"
+    tabela.loc['Parecer indefinido', 'Contagem'] = contagem_total
+
+    # Calcular a contagem em "Parecer definido"
+    tabela.loc['Parecer definido', 'Contagem'] = total_rows - contagem_total
 
     # Calcular as porcentagens
-    tabela['Porcentagem'] = (tabela['Contagem'] / total_rows) * 100    
+    tabela['Porcentagem'] = (tabela['Contagem'] / total_rows) * 100
     logging.debug(tabela)
     print(tabela)  
 

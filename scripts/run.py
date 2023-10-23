@@ -184,6 +184,10 @@ for column in columns_to_drop:
 
 viagens_gps_classificadas['versao_modelo'] = modelo_versao    
 
+### --- 9.2 Colocar as categorias simplificadas de status --- ###
+viagens_gps_classificadas = simplified_status(viagens_gps_classificadas)
+
+
 ### --- 9.2 Exportar tabela final com status em xlsx e json --- ###  
 export_data(viagens_gps_classificadas)
 

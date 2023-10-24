@@ -36,7 +36,7 @@ def reprocess_trips(dados: pd.DataFrame) -> pd.DataFrame:
 
         condicao = (
         (dados['flag_reprocessamento'] == 1) & 
-        (dados['data'] <= data_limite) & 
+        (dados['data'] < data_limite) & 
         ~(dados['status'].isin([
             "Viagem identificada e já paga", 
             "Viagem identificada e já paga para serviço diferente da amostra"

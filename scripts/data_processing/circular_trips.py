@@ -32,10 +32,7 @@ def circular_trips(dados: pd.DataFrame,
     # verifica os serviços e as datas presentes na amostra
     if args.cache:
         tipo_servico = pd.read_csv('../data/cache/tipo_servico.csv')   
-    else:
-        # tipo_servico = query_tipo_linha(data, servico, include_shape_direction=True)
-        
-        # código novo (inserir um DF aqui!!)
+    else:        
         tipo_servico = query_planned_trips(dados, include_shape_direction = True)
         tipo_servico.to_csv('../data/cache/tipo_servico.csv', index = False)
 

@@ -171,7 +171,7 @@ viagens_gps_classificadas = check_start_end_gps(viagens_gps_classificadas)
 # Esta etapa cria mapas em HTML para as viagens que tiveram sinais de GPS encontrados, mas não foram
 # classificadas nas etapas anteriores.
 
-automate_map(viagens_gps_classificadas)
+# automate_map(viagens_gps_classificadas)
 
 ### --- 9. Ajustes finais  --- ###
 

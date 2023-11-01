@@ -22,6 +22,10 @@ def log_info(message: str):
     print(message)  
     
 def export_data(viagens_gps_classificadas: pd.DataFrame) -> pd.DataFrame:
+    
+    protocolo = viagens_gps_classificadas.pop('protocolo')
+    viagens_gps_classificadas.insert(0, 'protocolo', protocolo)
+        
     viagens_gps_classificadas.to_excel('../data/output/amostra_classificada.xlsx', index=False)
     log_info('Arquivo com os status exportado com sucesso em xlsx no diretório data/output.')
     viagens_gps_classificadas.to_json('../data/output/amostra_classificada.json')
@@ -54,8 +58,8 @@ def generate_report(viagens_gps_classificadas: pd.DataFrame, amostra: pd.DataFra
 
     # Checar número de viagens do arquivo raw vs o número de viagens na tabela final do algoritmo:
     if len(amostra) == len(viagens_gps_classificadas):
-        log_info("Quantidade de viagens do input igual a quantidade de viagens no output.")
+        log_info("Check: OK. Quantidade de viagens do input igual a quantidade de viagens no output.")
     else:
-        log_info("ATENÇÃO: Quantidade de viagens do input DIFERENTE da quantidade de viagens no output.")
+        log_info("Check: ATENÇÃO. Quantidade de viagens do input DIFERENTE da quantidade de viagens no output.")
     
         

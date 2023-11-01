@@ -39,14 +39,16 @@ def reprocess_trips(dados: pd.DataFrame) -> pd.DataFrame:
         (dados['data'] < data_limite) & 
         ~(dados['status'].isin([
             "Viagem identificada e já paga", 
-            "Viagem identificada e já paga para serviço diferente da amostra"
+            "Viagem identificada e já paga para serviço diferente da amostra", 
+            "Viagem duplicada na amostra"
         ]))
         )      
 
         linhas_condicao = dados[condicao]
-
+        linhas_condicao.to_excel('../data/treated/recursos_para_reprocessar.xlsx')
+        
         demais_linhas = dados[~condicao]
-
+        
         # Verificar se há linhas que atendem à condição
         if not linhas_condicao.empty:
             print("As seguintes viagens atenderam à condição de reprocessamento do serviço:", linhas_condicao)           

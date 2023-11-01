@@ -19,7 +19,7 @@ def automate_map(viagens_gps_classificadas):
     
     condition = (
     (viagens_gps_classificadas['status'] == "Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra") | 
-    (viagens_gps_classificadas['status'] == "O veículo não passou no raio de 500m do ponto de partida/final do trajeto")
+     (viagens_gps_classificadas['status'] == "O veículo não passou no raio de 500m do ponto de partida/final do trajeto")
     )
 
     if condition.any():

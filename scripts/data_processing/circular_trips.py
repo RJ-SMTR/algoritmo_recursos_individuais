@@ -77,7 +77,8 @@ def circular_trips(dados: pd.DataFrame,
     ]
     
     print(df_circular_na)
-
+    df_circular_na.to_excel('../data/treated/viagens_circulares_tratar.xlsx')
+    
     # Criando o DataFrame df_demais_casos
     df_demais_casos = dados.drop(df_circular_na.index)
 

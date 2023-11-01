@@ -29,6 +29,7 @@ def treat_sample(dados: pd.DataFrame) -> pd.DataFrame:
     dados['hora_fim'] = dados['hora_fim'].astype(str)
     dados['datetime_chegada'] = pd.to_datetime(dados['data'] + ' ' + dados['hora_fim'])
     
+    
     log_info('Tratamento da amostra concluído com sucesso.')   
     return dados
 

@@ -34,13 +34,15 @@ def export_data(viagens_gps_classificadas: pd.DataFrame) -> pd.DataFrame:
 def generate_report(viagens_gps_classificadas: pd.DataFrame, amostra: pd.DataFrame) -> pd.DataFrame:
     
     log_info('Relatório da execução do algoritmo:')
-        
+
     # Criar um dataframe para armazenar os resultados
     tabela = pd.DataFrame(index=['Parecer definido','Parecer indefinido'], columns=['Contagem', 'Porcentagem'])
 
     # Contar as ocorrências de cada caso
     total_rows = len(viagens_gps_classificadas)
-
+    
+    print('Total de recursos classificadas analisados pelo algoritmo:', total_rows)
+    
     # Contar o número de ocorrências de ambas as condições
     condicao = (viagens_gps_classificadas['status'] == 'Viagem não classificada pelo algoritmo')
     contagem_total = sum(condicao)

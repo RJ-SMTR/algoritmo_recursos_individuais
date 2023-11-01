@@ -115,6 +115,7 @@ def check_trips(amostra: pd.DataFrame, query_trip_table: pd.DataFrame, status: s
     # Encontre as posições da coluna inicial e final
     start_col = amostra_nan.columns.get_loc('data')
     end_col = amostra_nan.columns.get_loc('status')
+    
     # Selecione as colunas do DataFrame
     amostra_nan = amostra_nan.iloc[:, start_col:end_col + 1]
 
@@ -155,18 +156,65 @@ def check_trips(amostra: pd.DataFrame, query_trip_table: pd.DataFrame, status: s
 
     tabela_comparativa.loc[condition, 'status'] = status + " para serviço diferente da amostra"
         
+        
+    # Verificar se existem casos duplicados após o merge e removê-los:
     
+    # Caso 1 - Se as colunas 'id_veiculo_amostra','datetime_partida_amostra' estão duplicadas, significa que significa que 
+    # o mesmo recurso foi comparado com mais de uma viagem. Abaixo, será mantida apenas a viagem mais próxima do recurso, de 
+    # acordo com a comparação entre datetime_partida_amostra do recurso e datetime_partida_apurado da viagem.
+    
+    colunas_amostra = ['id_veiculo_amostra','datetime_partida_amostra']    
+        
+    tabela_comparativa['diferenca_tempo'] = (tabela_comparativa['datetime_partida_apurado'] - tabela_comparativa['datetime_partida_amostra']).abs()
+
+    # 2. Ordenar pelo id_veiculo_amostra, datetime_partida_amostra e diferenca_tempo
+    tabela_comparativa = tabela_comparativa.sort_values(by=['id_veiculo_amostra', 'datetime_partida_amostra', 'diferenca_tempo'])
+
+    # 3. Remover duplicatas mantendo a primeira (menor diferença de tempo)
+    tabela_comparativa = tabela_comparativa.drop_duplicates(subset=colunas_amostra, keep='first')
+
+    # Remover a coluna de diferença de tempo, se não for mais necessária
+    tabela_comparativa = tabela_comparativa.drop(columns='diferenca_tempo')
+        
+    
+    # Caso 2 - Se as colunas 'id_veiculo_apurado','datetime_partida_apurado' estão duplicadas, significa que 
+    # dois recursos diferentes foram comparados com a mesma viagem. Neste caso, não é possível descartar a linha 
+    # inteira, como foi feito no caso anterior. A solução foi transformar em NA as colunas apuradas do recurso
+    # em que a diferença entre datetime_partida_amostra do recurso e datetime_partida_apurado da viagem é maior.
+          
+    colunas_apurada = ['id_veiculo_apurado', 'datetime_partida_apurado']
+        
+    tabela_comparativa['diferenca_tempo'] = (tabela_comparativa['datetime_partida_apurado'] - tabela_comparativa['datetime_partida_amostra']).abs()
+
+    # Ordenar pelo id_veiculo_amostra, datetime_partida_amostra e diferenca_tempo
+    tabela_comparativa = tabela_comparativa.sort_values(by=['id_veiculo_apurado', 'datetime_partida_apurado', 'diferenca_tempo'])
+
+    coluna_limite = 'datetime_chegada_amostra'
+    posicao_coluna_limite = tabela_comparativa.columns.get_loc(coluna_limite)
+    colunas_para_limpar = tabela_comparativa.columns[posicao_coluna_limite+1:]
+
+    # Identificar as linhas duplicadas, exceto a primeira ocorrência
+    duplicatas = tabela_comparativa.duplicated(subset=colunas_apurada, keep='first')
+
+    # Atribuir np.nan às células selecionadas
+    tabela_comparativa.loc[duplicatas, colunas_para_limpar] = np.nan
+    
+    # Remover a coluna de diferença de tempo, se não for mais necessária
+    tabela_comparativa = tabela_comparativa.drop(columns='diferenca_tempo')
+    
+    
+
     # Verificar se existem dados duplicados no cruzamento de dados
     unique_data = tabela_comparativa[['id_veiculo_apurado', 'datetime_partida_apurado']].drop_duplicates()
     
     if tabela_comparativa.shape[0] == unique_data.shape[0]:
-        print("Não existem casos duplicados no cruzamento de dados.")
+        print("Não existem casos duplicados no cruzamento de dados após o tratamento.")
     else:        
         duplicated_rows = tabela_comparativa[tabela_comparativa.duplicated(['id_veiculo_apurado', 'datetime_partida_apurado'])]    
             
         matching_rows = pd.merge(tabela_comparativa, duplicated_rows[['id_veiculo_apurado', 'datetime_partida_apurado']], 
                                  on=['id_veiculo_apurado', 'datetime_partida_apurado'], how='inner')
-        print("\nCasos duplicados encontrados no cruzamento de dados:")
+        print("\nCasos duplicados encontrados no cruzamento de dados mesmo após o tratamento:")
         print(matching_rows)
        
     # formatar tabelas para retornar todas as linhas da amostra que foi inserida
@@ -203,9 +251,7 @@ def check_trips(amostra: pd.DataFrame, query_trip_table: pd.DataFrame, status: s
 
     final_data.drop(['intervalo', 'data_amostra'], axis=1, inplace=True)
 
-
     return final_data 
-
 
 
 ### --- 4. Função de classificação de dados de GPS --- ###

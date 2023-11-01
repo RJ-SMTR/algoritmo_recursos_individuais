@@ -172,6 +172,13 @@ viagens_gps_classificadas = check_start_end_gps(viagens_gps_classificadas)
 # classificadas nas etapas anteriores.
 
 # automate_map(viagens_gps_classificadas)
+# Lista de status desejados
+status_desejados = [
+    "Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra"
+]
+
+# Chamar a função com a lista de status
+automate_map(viagens_gps_classificadas, status_desejados)
 
 ### --- 9. Ajustes finais  --- ###
 

@@ -1,5 +1,6 @@
 import logging
 import pandas as pd
+import prefect
 from datetime import timedelta, datetime
 
 ### --- 1 - Config do arquivo de log ---###
@@ -14,12 +15,14 @@ logging.basicConfig(
 )
 
 ### --- Função de log --- ###
-def log_info(message: str):
+def log_info(message) -> None:
     """
     Mostra a mensagem do log no console e salva no arquivo de log.
     """
-    logging.debug(message)
-    print(message)  
+    # logging.debug(message)
+    # print(message)  
+    prefect.context.logger.info(f"\n{message}")
+       
     
 def export_data(viagens_gps_classificadas: pd.DataFrame) -> pd.DataFrame:
     

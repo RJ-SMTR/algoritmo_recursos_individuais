@@ -630,12 +630,13 @@ def simplified_status(dataframe: pd.DataFrame) -> pd.DataFrame:
                               'Viagem indeferida - Não atingiu % de GPS ou trajeto correto para serviço diferente da amostra',
                               'Viagem indeferida - Não atingiu % de GPS ou trajeto correto',
                               'Viagem duplicada na amostra',
-                              'Pós-reprocessamento: Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra',
                               'Serviço não planejado para o dia',
                               'O veículo não passou no raio de 500m do ponto de partida/final do trajeto',
                               'Sinal de GPS encontrado para o veículo operando em serviço diferente da amostra',
                               'Sinal de GPS não encontrado para o veículo no horário da viagem'],
-        'Viagem não classificada pelo algoritmo': ['Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra']
+        'Viagem não classificada pelo algoritmo': ['Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra',
+                                                   'Pós-reprocessamento: Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra'
+                                                   ]
     }
 
     # Criar a coluna status nova (com categorias simplificadas)

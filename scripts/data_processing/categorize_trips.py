@@ -399,9 +399,6 @@ def check_start_end_gps(viagens_gps_classificadas: pd.DataFrame) -> pd.DataFrame
     ]
 
     viagens_com_gps = viagens_gps_classificadas[viagens_gps_classificadas['status'].isin(status_checks)]
-    
-    # status_check = 'Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra'
-    # viagens_com_gps = viagens_gps_classificadas[viagens_gps_classificadas['status'] == status_check]
     viagens_ja_classificadas = viagens_gps_classificadas[~viagens_gps_classificadas['status'].isin(status_checks)]
 
     if args.cache:

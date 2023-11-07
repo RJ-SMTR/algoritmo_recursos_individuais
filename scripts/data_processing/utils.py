@@ -41,7 +41,7 @@ def generate_report(viagens_gps_classificadas: pd.DataFrame, amostra: pd.DataFra
     # 1 - Mostrar o total de recursos avaliados
     total_rows = len(viagens_gps_classificadas)
     
-    print('Total de recursos classificadas analisados pelo algoritmo:', total_rows)
+    print('Total de recursos analisados pelo algoritmo:', total_rows)
     
        
     # 2 - Contar o número de ocorrências em que o algoritmo foi capaz de gerar um parecer

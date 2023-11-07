@@ -152,7 +152,7 @@ def check_trips(amostra: pd.DataFrame, query_trip_table: pd.DataFrame, status: s
     tabela_comparativa.loc[condition, 'status'] = status
     
     condition = (tabela_comparativa['id_veiculo_amostra'] == tabela_comparativa['id_veiculo_apurado']) & \
-            (tabela_comparativa['servico_amostra'] != tabela_comparativa['servico_apurado'])
+            (tabela_comparativa['servico_amostra'] != tabela_comparativa['servico_apurado']) 
 
     tabela_comparativa.loc[condition, 'status'] = status + " para serviço diferente da amostra"
         
@@ -278,13 +278,34 @@ def check_gps(row, df_check):
     unique_servicos = filtered_df['servico'].unique()
     servico_apurado = ', '.join(unique_servicos)
 
+    # if not filtered_df.empty and np.isnan(row['status']):
+    #     if all(filtered_df['servico'] == row['servico_amostra']):
+    #         return ("Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra", servico_apurado)
+    #     else:
+    #         return ("Sinal de GPS encontrado para o veículo operando em serviço diferente da amostra", servico_apurado)
+        
+        
+    # else:
+    #     return ("Sinal de GPS não encontrado para o veículo no horário da viagem", np.nan)
+
+
     if not filtered_df.empty and np.isnan(row['status']):
+    # Verifica se todos os serviços no filtered_df são iguais ao serviço da amostra
         if all(filtered_df['servico'] == row['servico_amostra']):
             return ("Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra", servico_apurado)
+        # Caso a data seja anterior a 16-11-2022, o servico foi reprocessado, ou seja, não faz sentido a categoria
+        # de que o veículo operou em serviço diferente da amostra. Por isto foi criada a categoria ""Pós-reprocessamento: Sinal de GPS 
+        # encontrado para o veículo operando no mesmo serviço da amostra"
+        # para indicar que mesmo após o reprocessamento, a viagem não foi identificada.
+        elif any((filtered_df['servico'] != row['servico_amostra']) & 
+                (filtered_df['timestamp_gps'].dt.date < pd.to_datetime('2022-11-16').date())):
+            return ("Pós-reprocessamento: Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra", servico_apurado)
         else:
             return ("Sinal de GPS encontrado para o veículo operando em serviço diferente da amostra", servico_apurado)
     else:
         return ("Sinal de GPS não encontrado para o veículo no horário da viagem", np.nan)
+
+
 
 
 ### --- 5. Função de classificação de viagens circulares --- ###
@@ -370,9 +391,18 @@ def check_start_end_gps(viagens_gps_classificadas: pd.DataFrame) -> pd.DataFrame
 
 
     log_info('Iniciando a verificação de sinais de GPS dentro do raio dos pontos inicial e final.')
-    status_check = 'Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra'
-    viagens_com_gps = viagens_gps_classificadas[viagens_gps_classificadas['status'] == status_check]
-    viagens_ja_classificadas = viagens_gps_classificadas[viagens_gps_classificadas['status'] != status_check]
+    
+    
+    status_checks = [
+    'Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra',
+    'Pós-reprocessamento: Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra'
+    ]
+
+    viagens_com_gps = viagens_gps_classificadas[viagens_gps_classificadas['status'].isin(status_checks)]
+    
+    # status_check = 'Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra'
+    # viagens_com_gps = viagens_gps_classificadas[viagens_gps_classificadas['status'] == status_check]
+    viagens_ja_classificadas = viagens_gps_classificadas[~viagens_gps_classificadas['status'].isin(status_checks)]
 
     if args.cache:
         dados_shape = pd.read_csv('../data/cache/dados_gps_shape.csv')
@@ -600,6 +630,7 @@ def simplified_status(dataframe: pd.DataFrame) -> pd.DataFrame:
                               'Viagem indeferida - Não atingiu % de GPS ou trajeto correto para serviço diferente da amostra',
                               'Viagem indeferida - Não atingiu % de GPS ou trajeto correto',
                               'Viagem duplicada na amostra',
+                              'Pós-reprocessamento: Sinal de GPS encontrado para o veículo operando no mesmo serviço da amostra',
                               'Serviço não planejado para o dia',
                               'O veículo não passou no raio de 500m do ponto de partida/final do trajeto',
                               'Sinal de GPS encontrado para o veículo operando em serviço diferente da amostra',
